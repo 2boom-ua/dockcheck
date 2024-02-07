@@ -89,14 +89,14 @@ def docker_check():
 		for i in range(len(result)):
 			containername = "".join(result[i]).split("'")[1].split(":")[0].split("/")[-1]
 			if STOPPED:
-				containerstatus = "stopped"
+				containerstatus = "inactive"
 			else:
 				containerstatus = "".join(result[i]).split()[-1]
 		
 			containername = hbold(containername)
 			if containerstatus == "running":
 				STATUS_DOT = GREEN_DOT
-			elif containerstatus == "stopped":
+			elif containerstatus == "inactive":
 				STATUS_DOT = RED_DOT
 			else:
 				STATUS_DOT = ORANGE_DOT
