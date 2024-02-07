@@ -45,6 +45,7 @@ def check_docker_status():
 		
 HOSTNAME = hbold(get_str_from_file("/proc/sys/kernel/hostname"))
 CURRENT_PATH = "/root/dockcheck"
+TMP_FILE = "/tmp/dockcheck.tmp"
 ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 SEC_REPEAT = 20
 if os.path.exists(f"{CURRENT_PATH}/config.yml"):
@@ -69,11 +70,11 @@ def docker_check():
 	flistofcontainers = getContainers()
 	for i in range(len(flistofcontainers)):
 		listofcontainers.append(flistofcontainers[i])
-	if not os.path.exists(f"/tmp/dockcheck.tmp"):
-		with open('/tmp/dockcheck.tmp', 'w') as file:
+	if not os.path.exists(TMP_FILE):
+		with open(TMP_FILE, 'w') as file:
 			file.write(",".join(listofcontainers))
 		file.close()
-	with open('/tmp/dockcheck.tmp', 'r') as file:
+	with open(TMP_FILE, 'r') as file:
 		oldlistofcontainers = file.read().split(",")
 	file.close()
 	
@@ -83,7 +84,7 @@ def docker_check():
 		result = list(set(oldlistofcontainers) - set(listofcontainers))
 		STOPPED = True
 	if len(result) != 0:
-		with open('/tmp/dockcheck.tmp', 'w') as file:
+		with open(TMP_FILE, 'w') as file:
 			file.write(",".join(listofcontainers))
 		file.close()
 		for i in range(len(result)):
