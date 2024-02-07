@@ -1,0 +1,6 @@
+telegram:
+   TOKEN: "TOKEN"
+   CHAT_ID: "CHATID"
+timeout:
+   SEC_REPEAT: 10
+   
