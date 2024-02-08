@@ -9,6 +9,7 @@ telegram:
 timeout:
    SEC_REPEAT: 10
 ```
+make as service
 ```
 nano /etc/systemd/system/dockcheck.service
 ```
