@@ -1,7 +1,7 @@
 # dockchek
 docker container notifier
 
-config.yml
+**config.yml**
 ```
 telegram:
    TOKEN: "your token"
@@ -9,7 +9,7 @@ telegram:
 timeout:
    SEC_REPEAT: 10
 ```
-make as service
+**make as service**
 ```
 nano /etc/systemd/system/dockcheck.service
 ```
