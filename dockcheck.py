@@ -92,7 +92,7 @@ def docker_check():
 					STATUS_DOT = RED_DOT
 				else:
 					STATUS_DOT = ORANGE_DOT
-				telegram_message(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
+				telegram_message(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername} is {containerstatus}\n")
 				#print(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
 while True:
     run_pending()
