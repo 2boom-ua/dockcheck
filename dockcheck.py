@@ -46,7 +46,7 @@ if __name__ == "__main__":
 			SEC_REPEAT = parsed_yaml["timeout"]["SEC_REPEAT"]
 			file.close()
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"{HOSTNAME} (docker container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
+		telegram_message(f"{HOSTNAME} (container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
 	else:
 		print("config.yml not found")
 
@@ -92,8 +92,8 @@ def docker_check():
 					STATUS_DOT = RED_DOT
 				else:
 					STATUS_DOT = ORANGE_DOT
-				telegram_message(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername} is {containerstatus}\n")
-				#print(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
+				telegram_message(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername} is {containerstatus}\n")
+				#print(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
 while True:
     run_pending()
     time.sleep(1)
