@@ -17,9 +17,9 @@ def getContainers():
 
 def get_str_from_file(filename):
 	if os.path.exists(filename):
-		with open(filename, "r") as data_file:
-			ret = data_file.read().strip("\n")
-		data_file.close()
+		with open(filename, "r") as file:
+			ret = file.read().strip("\n")
+		file.close()
 		return ret
 	return ""
 	
