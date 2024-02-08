@@ -15,7 +15,7 @@ def getContainers():
 		containersReturn.append(f"{container.name} {container.status}")
 	return containersReturn
 
-def get_str_from_file(filename):
+def get_str_from_file(filename : str):
 	if os.path.exists(filename):
 		with open(filename, "r") as file:
 			ret = file.read().strip("\n")
@@ -23,10 +23,10 @@ def get_str_from_file(filename):
 		return ret
 	return ""
 	
-def bold_html_txt(item):
+def bold_html_txt(item : str):
 	return f"<b>{item}</b>"
 	
-def telegram_message(message):
+def telegram_message(message : str):
 	try:
 		if message != "":
 			tb.send_message(CHAT_ID, message, parse_mode='html')
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 			TOKEN = parsed_yaml["telegram"]["TOKEN"]
 			CHAT_ID = parsed_yaml["telegram"]["CHAT_ID"]
 			SEC_REPEAT = parsed_yaml["timeout"]["SEC_REPEAT"]
-			file.close()
+		file.close()
 		tb = telebot.TeleBot(TOKEN)
 		telegram_message(f"{HOSTNAME} (container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
 	else:
@@ -59,8 +59,7 @@ def docker_check():
 	listofcontainers = oldlistofcontainers = []
 	containername = containerstatus = ""
 	flistofcontainers = getContainers()
-	for i in range(len(flistofcontainers)):
-		listofcontainers.append(flistofcontainers[i])
+	[listofcontainers.append(flistofcontainers[i]) for i in range(len(flistofcontainers))]
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, 'w') as file:
 			file.write(",".join(listofcontainers))
@@ -92,8 +91,7 @@ def docker_check():
 					STATUS_DOT = RED_DOT
 				else:
 					STATUS_DOT = ORANGE_DOT
-				telegram_message(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername} is {containerstatus}\n")
-				#print(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
+				telegram_message(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername} is {containerstatus}!\n")
 while True:
     run_pending()
     time.sleep(1)
