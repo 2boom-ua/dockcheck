@@ -8,8 +8,6 @@ import os
 import time
 from schedule import every, repeat, run_pending
 
-dockerClient = docker.DockerClient()
-
 def getContainers():
 	containersReturn = []
 	containers = dockerClient.containers.list(all=True)
@@ -25,8 +23,8 @@ def get_str_from_file(filename):
 		return ret
 	return ""
 	
-def hbold(item):
-	return telebot.formatting.hbold(item)
+def bold_html_txt(item):
+	return f"<b>{item}</b>"
 	
 def telegram_message(message):
 	try:
@@ -34,35 +32,29 @@ def telegram_message(message):
 			tb.send_message(CHAT_ID, message, parse_mode='html')
 	except Exception as e:
 		print(f"error: {e}")
-		
-def check_docker_status():
-	try:
-		client = docker.from_env()
-		client.ping()
-		return True
-	except:
-		return False
-		
-HOSTNAME = hbold(get_str_from_file("/proc/sys/kernel/hostname"))
-CURRENT_PATH = "/root/dockcheck"
-SEC_REPEAT = 20
-if os.path.exists(f"{CURRENT_PATH}/config.yml"):
-	with open(f"{CURRENT_PATH}/config.yml", 'r') as file:
-		parsed_yaml = yaml.safe_load(file)
-		TOKEN = parsed_yaml["telegram"]["TOKEN"]
-		CHAT_ID = parsed_yaml["telegram"]["CHAT_ID"]
-		SEC_REPEAT = parsed_yaml["timeout"]["SEC_REPEAT"]
-		file.close()
-	tb = telebot.TeleBot(TOKEN)
-	telegram_message(f"{HOSTNAME} (docker container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
-else:
-	print("config.yml not found")
+
+if __name__ == "__main__":
+	dockerClient = docker.DockerClient()		
+	HOSTNAME = bold_html_txt(get_str_from_file("/proc/sys/kernel/hostname"))
+	CURRENT_PATH = "/root/dockcheck"
+	SEC_REPEAT = 20
+	if os.path.exists(f"{CURRENT_PATH}/config.yml"):
+		with open(f"{CURRENT_PATH}/config.yml", 'r') as file:
+			parsed_yaml = yaml.safe_load(file)
+			TOKEN = parsed_yaml["telegram"]["TOKEN"]
+			CHAT_ID = parsed_yaml["telegram"]["CHAT_ID"]
+			SEC_REPEAT = parsed_yaml["timeout"]["SEC_REPEAT"]
+			file.close()
+		tb = telebot.TeleBot(TOKEN)
+		telegram_message(f"{HOSTNAME} (docker container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
+	else:
+		print("config.yml not found")
 
 @repeat(every(SEC_REPEAT).seconds)
 def docker_check():
 	STOPPED = False
-	STATUS_DOT = ""
 	TMP_FILE = "/tmp/dockcheck.tmp"
+	STATUS_DOT = ""
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	listofcontainers = oldlistofcontainers = []
 	containername = containerstatus = ""
@@ -93,16 +85,15 @@ def docker_check():
 					containerstatus = "inactive"
 				else:
 					containerstatus = "".join(result[i]).split()[-1]
-			
-				containername = hbold(containername)
+				containername = bold_html_txt(containername)
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
-				elif containerstatus == "inactive":
+				elif containerstatus == "inactive" or containerstatus == "removing" or containerstatus == "dead":
 					STATUS_DOT = RED_DOT
 				else:
 					STATUS_DOT = ORANGE_DOT
-				telegram_message(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername} ({containerstatus})\n")
-				print(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername} ({containerstatus})\n")
+				telegram_message(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
+				#print(f"{HOSTNAME} (docker container)\n{STATUS_DOT} - {containername}: {containerstatus}\n")
 while True:
     run_pending()
     time.sleep(1)
