@@ -15,7 +15,7 @@ nano /etc/systemd/system/dockcheck.service
 ```
 ```
 [Unit]
-Description=check active hosts
+Description=check active docker's containers
 After=multi-user.target
 
 [Service]
