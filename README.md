@@ -1,5 +1,14 @@
 # dockchek
 docker container notifier
+
+config.yml
+```
+telegram:
+   TOKEN: "your token"
+   CHAT_ID: "your chat id"
+timeout:
+   SEC_REPEAT: 10
+```
 ```
 nano /etc/systemd/system/dockcheck.service
 ```
