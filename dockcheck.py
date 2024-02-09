@@ -22,15 +22,14 @@ def get_str_from_file(filename : str):
 		return ret
 	return ""
 	
-def bold_html_txt(item : str):
-	return f"<b>{item}</b>"
+def bold_html_txt(message : str):
+	return f"<b>{message}</b>"
 	
 def telegram_message(message : str):
-	if message != "":
-		try:
-			tb.send_message(CHAT_ID, message, parse_mode='html')
-		except Exception as e:
-			print(f"error: {e}")
+	try:
+		tb.send_message(CHAT_ID, message, parse_mode='html')
+	except Exception as e:
+		print(f"error: {e}")
 
 if __name__ == "__main__":
 	dockerClient = docker.DockerClient()		
