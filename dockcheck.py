@@ -11,8 +11,7 @@ from schedule import every, repeat, run_pending
 def getContainers():
 	containersReturn = []
 	containers = dockerClient.containers.list(all=True)
-	for container in containers:
-		containersReturn.append(f"{container.name} {container.status}")
+	[containersReturn.append(f"{container.name} {container.status}") for container in containers]
 	return containersReturn
 
 def get_str_from_file(filename : str):
@@ -27,11 +26,11 @@ def bold_html_txt(item : str):
 	return f"<b>{item}</b>"
 	
 def telegram_message(message : str):
-	try:
-		if message != "":
+	if message != "":
+		try:
 			tb.send_message(CHAT_ID, message, parse_mode='html')
-	except Exception as e:
-		print(f"error: {e}")
+		except Exception as e:
+			print(f"error: {e}")
 
 if __name__ == "__main__":
 	dockerClient = docker.DockerClient()		
@@ -46,7 +45,7 @@ if __name__ == "__main__":
 			SEC_REPEAT = parsed_yaml["timeout"]["SEC_REPEAT"]
 		file.close()
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"{HOSTNAME} (container)\ndocker containers monitor started: check period {SEC_REPEAT} sec.\n")
+		telegram_message(f"{HOSTNAME} (docker)\ncontainers monitor started: check period {SEC_REPEAT} sec.\n")
 	else:
 		print("config.yml not found")
 
@@ -54,8 +53,8 @@ if __name__ == "__main__":
 def docker_check():
 	STOPPED = False
 	TMP_FILE = "/tmp/dockcheck.tmp"
-	STATUS_DOT = ""
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
+	STATUS_DOT = ORANGE_DOT
 	listofcontainers = oldlistofcontainers = []
 	containername = containerstatus = ""
 	flistofcontainers = getContainers()
@@ -67,7 +66,6 @@ def docker_check():
 	with open(TMP_FILE, 'r') as file:
 		oldlistofcontainers = file.read().split(",")
 	file.close()
-	
 	if len(listofcontainers) >= len(oldlistofcontainers):
 		result = list(set(listofcontainers) - set(oldlistofcontainers)) 
 	else:
@@ -87,11 +85,10 @@ def docker_check():
 				containername = bold_html_txt(containername)
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
-				elif containerstatus == "inactive" or containerstatus == "removing" or containerstatus == "dead":
+				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
-				else:
-					STATUS_DOT = ORANGE_DOT
-				telegram_message(f"{HOSTNAME} (container)\n{STATUS_DOT} - {containername} is {containerstatus}!\n")
+				# restarting, paused, exited
+				telegram_message(f"{HOSTNAME} (docker)\n{STATUS_DOT} - {containername} is {containerstatus}!\n")
 while True:
     run_pending()
     time.sleep(1)
