@@ -12,7 +12,7 @@ from schedule import every, repeat, run_pending
 def getContainers():
 	containersReturn = []
 	containers = dockerClient.containers.list(all=True)
-	[containersReturn.append(f"{container.name} {container.status}") for container in containers]
+	[containersReturn.append(f"{container.name} {container.status} {container.short_id}") for container in containers]
 	return containersReturn
 	
 def telegram_message(message : str):
@@ -45,7 +45,7 @@ def docker_check():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
 	listofcontainers = oldlistofcontainers = []
-	containername, containerstatus = "", "inactive"
+	containername, containerid, containerstatus = "", "", "inactive"
 	flistofcontainers = getContainers()
 	[listofcontainers.append(flistofcontainers[i]) for i in range(len(flistofcontainers))]
 	if not os.path.exists(TMP_FILE):
@@ -66,15 +66,16 @@ def docker_check():
 		file.close()
 		for i in range(len(result)):
 			containername = "".join(result[i]).split()[0]
+			containerid  = "".join(result[i]).split()[-1]
 			if containername != "":
 				if not STOPPED:
-					containerstatus = "".join(result[i]).split()[-1]
+					containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				# restarting, paused, exited
-				telegram_message(f"*{HOSTNAME}* (docker)\n{STATUS_DOT} - *{containername}* is {containerstatus}!\n")
+				telegram_message(f"*{HOSTNAME}* (docker)\n{STATUS_DOT} - *{containername}* ({containerid}) is {containerstatus}!\n")
 while True:
     run_pending()
     time.sleep(1)
