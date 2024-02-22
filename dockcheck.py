@@ -10,10 +10,10 @@ import time
 from schedule import every, repeat, run_pending
 
 def getContainers():
-	containersReturn = []
-	containers = dockerClient.containers.list(all=True)
-	[containersReturn.append(f"{container.name} {container.status} {container.short_id}") for container in containers]
-	return containersReturn
+	docker_client = docker.from_env()
+	containers = []
+	[containers.append(f"{container.name} {container.status} {container.short_id}") for container in docker_client.containers.list(all=True)]
+	return containers
 	
 def telegram_message(message : str):
 	try:
@@ -22,7 +22,6 @@ def telegram_message(message : str):
 		print(f"error: {e}")
 
 if __name__ == "__main__":
-	dockerClient = docker.DockerClient()
 	HOSTNAME = open('/proc/sys/kernel/hostname', 'r').read().strip('\n')
 	CURRENT_PATH = "/root/dockcheck"
 	SEC_REPEAT = 20
@@ -45,15 +44,15 @@ def docker_check():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
 	listofcontainers = oldlistofcontainers = []
-	containername, containerid, containerstatus = "", "", "inactive"
-	flistofcontainers = getContainers()
-	[listofcontainers.append(flistofcontainers[i]) for i in range(len(flistofcontainers))]
+	stroldlistofcontainers, containername, containerid, containerstatus = "", "", "", "inactive"
+	listofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, 'w') as file:
 			file.write(",".join(listofcontainers))
 		file.close()
 	with open(TMP_FILE, 'r') as file:
-		oldlistofcontainers = file.read().split(",")
+		stroldlistofcontainers = file.read()
+		oldlistofcontainers = stroldlistofcontainers.split(",")
 	file.close()
 	if len(listofcontainers) >= len(oldlistofcontainers):
 		result = list(set(listofcontainers) - set(oldlistofcontainers)) 
@@ -68,14 +67,17 @@ def docker_check():
 			containername = "".join(result[i]).split()[0]
 			containerid  = "".join(result[i]).split()[-1]
 			if containername != "":
-				if not STOPPED:
-					containerstatus = "".join(result[i]).split()[1]
+				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
+					if (containerid not in stroldlistofcontainers and containername in stroldlistofcontainers) and not STOPPED:
+						containerstatus = "changed"
+					elif (containerid not in stroldlistofcontainers and containername not in stroldlistofcontainers) and not STOPPED:
+						containerstatus = "started"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
-				# restarting, paused, exited
-				telegram_message(f"*{HOSTNAME}* (docker)\n{STATUS_DOT} - *{containername}* ({containerid}) is {containerstatus}!\n")
+			# created, paused, restarting, removing, exited
+				telegram_message(f"*{HOSTNAME}* (docker)\n{STATUS_DOT} - *{containername}* ({containerid}) is _{containerstatus}_!\n")
 while True:
     run_pending()
     time.sleep(1)
