@@ -50,10 +50,11 @@ def docker_check():
 		with open(TMP_FILE, 'w') as file:
 			file.write(",".join(listofcontainers))
 		file.close()
-	with open(TMP_FILE, 'r') as file:
-		stroldlistofcontainers = file.read()
-		oldlistofcontainers = stroldlistofcontainers.split(",")
-	file.close()
+	else:
+		with open(TMP_FILE, 'r') as file:
+			stroldlistofcontainers = file.read()
+			oldlistofcontainers = stroldlistofcontainers.split(",")
+		file.close()
 	if len(listofcontainers) >= len(oldlistofcontainers):
 		result = list(set(listofcontainers) - set(oldlistofcontainers)) 
 	else:
