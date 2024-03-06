@@ -1,5 +1,5 @@
 # dockchek
-docker container notifier
+docker container status notifier
 
 **config.yml**
 ```
