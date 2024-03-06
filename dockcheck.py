@@ -72,12 +72,12 @@ def docker_check():
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
 					if (containerid not in stroldlistofcontainers and containername in stroldlistofcontainers) and not STOPPED:
-						containerstatus = "changed"
+						containerstatus += " (changed)"
 					elif (containerid not in stroldlistofcontainers and containername not in stroldlistofcontainers) and not STOPPED:
-						containerstatus = "started"
+						containerstatus += " (started)"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
-			# created, paused, restarting, removing, exited
+			# ORANGE_DOT - created, paused, restarting, removing, exited
 				telegram_message(f"*{HOSTNAME}* (docker)\n{STATUS_DOT} - *{containername}* ({containerid}) is _{containerstatus}_!\n")
 while True:
     run_pending()
