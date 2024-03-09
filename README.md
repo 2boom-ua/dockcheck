@@ -18,7 +18,7 @@ nano /etc/systemd/system/dockcheck.service
 ```
 ```
 [Unit]
-Description=check active docker's containers
+Description=docker container status notifier
 After=multi-user.target
 
 [Service]
