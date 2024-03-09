@@ -8,7 +8,8 @@ docker container status notifier
 		"TOKEN": "your_token",
 		"CHAT_ID": "your_chat_id"
 	},
-	"MIN_REPEAT": 1
+	"SEC_REPEAT": 10,
+	"SHORT_MESSAGE": false
 }
 ```
 **make as service**
