@@ -1,13 +1,16 @@
 # dockchek
 docker container status notifier
 
-**config.yml**
+**config.json**
 ```
-telegram:
-   TOKEN: "your token"
-   CHAT_ID: "your chat id"
-timeout:
-   SEC_REPEAT: 10
+{
+	"TELEGRAM": {
+		"TOKEN": "your_token",
+		"CHAT_ID": "your_chat_id"
+	},
+	"SEC_REPEAT": 10,
+	"SHORT_MESSAGE": false
+}
 ```
 **make as service**
 ```
