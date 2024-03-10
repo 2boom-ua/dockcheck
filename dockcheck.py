@@ -33,7 +33,7 @@ def telegram_message(message : str):
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
-	CURRENT_PATH = "/root/dockcheck"
+	CURRENT_PATH =  os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		parsed_json = json.loads(open(f"{CURRENT_PATH}/config.json", "r").read())
