@@ -15,9 +15,9 @@ def getContainers():
 	containers = []
 	for container in docker_client.containers.list(all=True):
 		try:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']}")
 		except KeyError:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']}")
 	return containers
 
 def getContainersCount():
@@ -79,7 +79,6 @@ def docker_check():
 			containername = "".join(result[i]).split()[0]
 			if containername != "":
 				containerattr = "".join(result[i]).split()[2]
-				containerid  = "".join(result[i]).split()[-1]
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
@@ -91,8 +90,7 @@ def docker_check():
 				if GROUP_MESSAGE:
 					MESSAGE += f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
 				else:
-					MESSAGE = f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
-					telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")	
+					telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}:* {containerstatus}!\n")	
 		if GROUP_MESSAGE:			
 			telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")	
 while True:
