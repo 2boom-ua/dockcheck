@@ -9,7 +9,7 @@ docker container status notifier
 		"CHAT_ID": "your_chat_id"
 	},
 	"SEC_REPEAT": 10,
-	"SHORT_MESSAGE": false
+	"GROUP_MESSAGE": true
 }
 ```
 **make as service**
@@ -24,7 +24,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 /root/dockcheck/dockcheck.py
+ExecStart=/usr/bin/python3 /opt/dockcheck/dockcheck.py
 
 [Install]
 WantedBy=multi-user.target
