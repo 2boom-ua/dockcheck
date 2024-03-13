@@ -91,7 +91,7 @@ def docker_check():
 				if GROUP_MESSAGE:
 					MESSAGE += f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
 				else:
-					MESSAGE += f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
+					MESSAGE = f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
 					telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")	
 		if GROUP_MESSAGE:			
 			telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")	
