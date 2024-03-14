@@ -15,9 +15,9 @@ def getContainers():
 	containers = []
 	for container in docker_client.containers.list(all=True):
 		try:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
 		except KeyError:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	return containers
 
 def getContainersCount():
@@ -57,14 +57,15 @@ def docker_check():
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcheck)\n"
 	listofcontainers = oldlistofcontainers = []
-	containername, containerid, containerattr, containerstatus =  "", "", "", "inactive"
+	stroldlistofcontainers, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
 	listofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, "w") as file:
 			file.write(",".join(listofcontainers))
 		file.close()
 	with open(TMP_FILE, "r") as file:
-		oldlistofcontainers = file.read().split(",")
+		stroldlistofcontainers = file.read()
+		oldlistofcontainers = stroldlistofcontainers.split(",")
 	file.close()
 	if len(listofcontainers) >= len(oldlistofcontainers):
 		result = list(set(listofcontainers) - set(oldlistofcontainers)) 
@@ -79,11 +80,14 @@ def docker_check():
 			containername = "".join(result[i]).split()[0]
 			if containername != "":
 				containerattr = "".join(result[i]).split()[2]
+				containerid = "".join(result[i]).split()[-1]
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
 					if containerattr == "healthy":
 						containerstatus = f"{containerstatus} ({containerattr})"
+					if containerid not in stroldlistofcontainers:
+						containerstatus = f"{containerstatus} (id chaged)"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				# ORANGE_DOT - created, paused, restarting, removing, exited
