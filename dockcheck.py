@@ -55,25 +55,25 @@ def docker_check():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcheck)\n"
-	listofcontainers = oldlistofcontainers = []
-	stroldlistofcontainers, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
-	listofcontainers = getContainers()
+	LISTofcontainers = oldLISTofcontainers = []
+	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
+	LISTofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, "w") as file:
-			file.write(",".join(listofcontainers))
+			file.write(",".join(LISTofcontainers))
 		file.close()
 	with open(TMP_FILE, "r") as file:
-		stroldlistofcontainers = file.read()
-		oldlistofcontainers = stroldlistofcontainers.split(",")
+		oldSTRofcontainer = file.read()
+		oldLISTofcontainers = oldSTRofcontainer.split(",")
 	file.close()
-	if len(listofcontainers) >= len(oldlistofcontainers):
-		result = list(set(listofcontainers) - set(oldlistofcontainers)) 
+	if len(LISTofcontainers) >= len(oldLISTofcontainers):
+		result = list(set(LISTofcontainers) - set(oldLISTofcontainers)) 
 	else:
-		result = list(set(oldlistofcontainers) - set(listofcontainers))
+		result = list(set(oldLISTofcontainers) - set(LISTofcontainers))
 		STOPPED = True
 	if len(result) != 0:
 		with open(TMP_FILE, "w") as file:
-			file.write(",".join(listofcontainers))
+			file.write(",".join(LISTofcontainers))
 		file.close()
 		for i in range(len(result)):
 			containername = "".join(result[i]).split()[0]
@@ -83,8 +83,10 @@ def docker_check():
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
-					if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
-					if containerid not in stroldlistofcontainers and containername in stroldlistofcontainers: containerstatus = f"{containerstatus} (id changed)" 
+					if containerattr != containerstatus:
+						containerstatus = f"{containerstatus} ({containerattr})"
+					if containerid not in oldSTRofcontainer and containername in oldSTRofcontainer:
+						containerstatus = f"{containerstatus.split()[0]} (id changed)"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				# ORANGE_DOT - created, paused, restarting, removing, exited
