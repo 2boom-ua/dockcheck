@@ -10,6 +10,21 @@ import os
 import time
 from schedule import every, repeat, run_pending
 
+def getImages():
+	docker_client = docker.from_env()
+	images = []
+	for image in docker_client.images.list():
+		imagename = ''.join(image.tags).split(':')[0]
+		if len(imagename.split('/')) > 1: imagename = f"{imagename.split('/')[1]}/{imagename.split('/')[-1]}"
+		if imagename == "": imagename = image.short_id.split(':')[-1]
+		images.append(f"{image.short_id.split(':')[-1]} {imagename}")
+	return images
+
+def getImagesCount():
+	docker_client = docker.from_env()
+	count = len(docker_client.images.list())
+	return count
+
 def getContainers():
 	docker_client = docker.from_env()
 	containers = []
@@ -44,17 +59,55 @@ if __name__ == "__main__":
 		CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"*{HOSTNAME}* (dockcheck)\n- polling period: {SEC_REPEAT} seconds,\n- message type: {MESSAGE_TYPE},\n- currently monitoring: {getContainersCount()} containers.")
+		telegram_message(f"*{HOSTNAME}* (dockcheck)\n- polling period: {SEC_REPEAT} seconds,\n- message type: {MESSAGE_TYPE},\n- currently monitoring: {getContainersCount()} containers,\n- currently monitoring: {getImagesCount()} images.")
 	else:
 		print("config.json not found")
+		
+		
+@repeat(every(SEC_REPEAT).seconds)
+def docker_image():
+	TMP_FILE = "/tmp/dockupntfy.tmp"
+	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
+	STATUS_DOT = GREEN_DOT
+	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockimage)\n"
+	LISTofimages = oldLISTofimages = []
+	LISTofimages = getImages()
+	imagename = imageid = ""
+	if not os.path.exists(TMP_FILE):
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofimages))
+		file.close()
+	with open(TMP_FILE, "r") as file:
+		oldLISTofimages = file.read().split(",")
+	file.close()
+	if len(LISTofimages) >= len(oldLISTofimages):
+		result = list(set(LISTofimages) - set(oldLISTofimages))
+		STATUS_DOT = GREEN_DOT
+		UP_MESSAGE = "created"
+	else:
+		result = list(set(oldLISTofimages) - set(LISTofimages))
+		STATUS_DOT = RED_DOT
+		UP_MESSAGE ="removed"
+	if len(result) != 0:
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofimages))
+		file.close()
+		for i in range(len(result)):
+			imagename = result[i].split()[-1]
+			imageid = result[i].split()[0]
+			if GROUP_MESSAGE:
+				MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {UP_MESSAGE}!\n"
+			else:
+				telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{imagename}* ({imageid}): {UP_MESSAGE}!\n")	
+		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 @repeat(every(SEC_REPEAT).seconds)
-def docker_check():
+def docker_container():
 	STOPPED = False
 	TMP_FILE = "/tmp/dockcheck.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcheck)\n"
+	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcontainer)\n"
 	LISTofcontainers = oldLISTofcontainers = []
 	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
 	LISTofcontainers = getContainers()
@@ -91,10 +144,11 @@ def docker_check():
 					STATUS_DOT = RED_DOT
 				# ORANGE_DOT - created, paused, restarting, removing, exited
 				if GROUP_MESSAGE:
-					MESSAGE += f"{STATUS_DOT} *{containername}:* {containerstatus}!\n"
+					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
 				else:
-					telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}:* {containerstatus}!\n")	
-		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")	
+					telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}*: {containerstatus}!\n")	
+		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
+
 while True:
     run_pending()
     time.sleep(1)
