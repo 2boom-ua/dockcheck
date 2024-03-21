@@ -69,6 +69,7 @@ def docker_image():
 	TMP_FILE = "/tmp/dockupntfy.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
+	NEWIMAGE = False
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockimage)\n"
 	LISTofimages = oldLISTofimages = []
 	LISTofimages = getImages()
@@ -84,6 +85,7 @@ def docker_image():
 		result = list(set(LISTofimages) - set(oldLISTofimages))
 		STATUS_DOT = GREEN_DOT
 		UP_MESSAGE = "created"
+		NEWIMAGE = True
 	else:
 		result = list(set(oldLISTofimages) - set(LISTofimages))
 		STATUS_DOT = RED_DOT
@@ -95,6 +97,12 @@ def docker_image():
 		for i in range(len(result)):
 			imagename = result[i].split()[-1]
 			imageid = result[i].split()[0]
+			if imageid == imagename and NEWIMAGE:
+				STATUS_DOT = ORANGE_DOT
+				UP_MESSAGE = "stored"
+			if imageid != imagename and NEWIMAGE:
+				STATUS_DOT = GREEN_DOT
+				UP_MESSAGE = "created"
 			if GROUP_MESSAGE:
 				MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {UP_MESSAGE}!\n"
 			else:
