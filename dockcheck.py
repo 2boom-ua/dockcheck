@@ -83,8 +83,8 @@ def docker_image():
 	file.close()
 	if len(LISTofimages) >= len(oldLISTofimages):
 		result = list(set(LISTofimages) - set(oldLISTofimages))
-		STATUS_DOT = GREEN_DOT
-		UP_MESSAGE = "created"
+		#STATUS_DOT = GREEN_DOT
+		#UP_MESSAGE = "created"
 		NEWIMAGE = True
 	else:
 		result = list(set(oldLISTofimages) - set(LISTofimages))
