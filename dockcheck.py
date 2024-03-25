@@ -70,7 +70,12 @@ if __name__ == "__main__":
 		CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"*{HOSTNAME}* (dockcheck)\n- polling period: {SEC_REPEAT} seconds,\n- message type: {MESSAGE_TYPE},\n- currently monitoring: {getContainersCount()} containers,\n- currently monitoring: {getImagesCount()} images,\n- currently monitoring: {getVolumesCount()} volumes.")
+		telegram_message(f"*{HOSTNAME}* (dockcheck)\n\
+		- polling period: {SEC_REPEAT} seconds,\n\
+		- message type: {MESSAGE_TYPE},\n\
+		- currently monitoring: {getContainersCount()} containers,\n\
+		- currently monitoring: {getImagesCount()} images,\n\
+		- currently monitoring: {getVolumesCount()} volumes.")
 	else:
 		print("config.json not found")
 		
