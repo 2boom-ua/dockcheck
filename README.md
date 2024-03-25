@@ -1,5 +1,5 @@
 # dockchek
-docker container status notifier
+docker containers, images, volumes status notifier
 
 **config.json**
 ```
