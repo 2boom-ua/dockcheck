@@ -10,12 +10,23 @@ import os
 import time
 from schedule import every, repeat, run_pending
 
+def getVolumes():
+	docker_client = docker.from_env()
+	volumes = []
+	for volume in docker_client.volumes.list():
+		volumes.append(f"{volume.short_id}")
+	return volumes
+
+def getVolumesCount():
+	docker_client = docker.from_env()
+	count = len(docker_client.volumes.list())
+	return count
+
 def getImages():
 	docker_client = docker.from_env()
 	images = []
 	for image in docker_client.images.list():
-		imagename = ''.join(image.tags).split(':')[0]
-		if len(imagename.split('/')) > 1: imagename = f"{imagename.split('/')[1]}/{imagename.split('/')[-1]}"
+		imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
 		if imagename == "": imagename = image.short_id.split(':')[-1]
 		images.append(f"{image.short_id.split(':')[-1]} {imagename}")
 	return images
@@ -59,18 +70,57 @@ if __name__ == "__main__":
 		CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"*{HOSTNAME}* (dockcheck)\n- polling period: {SEC_REPEAT} seconds,\n- message type: {MESSAGE_TYPE},\n- currently monitoring: {getContainersCount()} containers,\n- currently monitoring: {getImagesCount()} images.")
+		telegram_message(f"*{HOSTNAME}* (dockcheck)\n- polling period: {SEC_REPEAT} seconds,\n- message type: {MESSAGE_TYPE},\n- currently monitoring: {getContainersCount()} containers,\n- currently monitoring: {getImagesCount()} images,\n- currently monitoring: {getVolumesCount()} volumes.")
 	else:
 		print("config.json not found")
 		
+@repeat(every(SEC_REPEAT).seconds)
+def docker_volume():
+	TMP_FILE = "/tmp/dockvolume.tmp"
+	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
+	STATUS_DOT = GREEN_DOT
+	NEWVOLUME = False
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dockvolume)\n"
+	LISTofvolumes = oldLISTofvolumes = []
+	LISTofvolumes = getVolumes()
+	volumename = ""
+	if not os.path.exists(TMP_FILE):
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofvolumes))
+		file.close()
+	with open(TMP_FILE, "r") as file:
+		oldLISTofvolumes = file.read().split(",")
+	file.close()
+	if len(LISTofvolumes) >= len(oldLISTofvolumes):
+		result = list(set(LISTofvolumes) - set(oldLISTofvolumes))
+		NEWVOLUME = True
+	else:
+		result = list(set(oldLISTofvolumes) - set(LISTofvolumes))
+		STATUS_DOT = RED_DOT
+		STATUS_MESSAGE = "removed"
+	if len(result) != 0:
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofvolumes))
+		file.close()
+		for i in range(len(result)):
+			volumename = result[i]
+			if NEWVOLUME:
+				STATUS_DOT = GREEN_DOT
+				STATUS_MESSAGE = "created"
+			if GROUP_MESSAGE:
+				MESSAGE += f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
+			else:
+				MESSAGE = f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
+				telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
 @repeat(every(SEC_REPEAT).seconds)
 def docker_image():
-	TMP_FILE = "/tmp/dockupntfy.tmp"
+	TMP_FILE = "/tmp/dockimage.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
 	NEWIMAGE = False
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockimage)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dockimage)\n"
 	LISTofimages = oldLISTofimages = []
 	LISTofimages = getImages()
 	imagename = imageid = ""
@@ -87,7 +137,7 @@ def docker_image():
 	else:
 		result = list(set(oldLISTofimages) - set(LISTofimages))
 		STATUS_DOT = RED_DOT
-		UP_MESSAGE ="removed"
+		STATUS_MESSAGE = "removed"
 	if len(result) != 0:
 		with open(TMP_FILE, "w") as file:
 			file.write(",".join(LISTofimages))
@@ -97,20 +147,26 @@ def docker_image():
 			imageid = result[i].split()[0]
 			if imageid == imagename and NEWIMAGE:
 				STATUS_DOT = ORANGE_DOT
-				UP_MESSAGE = "stored"
+				STATUS_MESSAGE = "stored"
 			if imageid != imagename and NEWIMAGE:
 				STATUS_DOT = GREEN_DOT
-				UP_MESSAGE = "created"
+				STATUS_MESSAGE = "created"
 			if GROUP_MESSAGE:
-				MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {UP_MESSAGE}!\n"
+				if imageid == imagename:
+					MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+				else:
+					MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
 			else:
-				telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{imagename}* ({imageid}): {UP_MESSAGE}!\n")	
+				MESSAGE = f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
+				if imageid == imagename:
+					MESSAGE = f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+				telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 @repeat(every(SEC_REPEAT).seconds)
 def docker_container():
 	STOPPED = False
-	TMP_FILE = "/tmp/dockcheck.tmp"
+	TMP_FILE = "/tmp/dockcontainer.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcontainer)\n"
