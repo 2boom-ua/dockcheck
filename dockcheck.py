@@ -63,7 +63,9 @@ if __name__ == "__main__":
 	SEC_REPEAT = 20
 	MESSAGE_TYPE = "single"
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
-		parsed_json = json.loads(open(f"{CURRENT_PATH}/config.json", "r").read())
+		with open(f"{CURRENT_PATH}/config.json", "r") as file:
+			parsed_json = json.loads(file.read())
+		file.close()
 		SEC_REPEAT = int(parsed_json["SEC_REPEAT"])
 		GROUP_MESSAGE = parsed_json["GROUP_MESSAGE"]
 		TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
@@ -82,10 +84,10 @@ if __name__ == "__main__":
 @repeat(every(SEC_REPEAT).seconds)
 def docker_volume():
 	TMP_FILE = "/tmp/dockvolume.tmp"
-	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
+	GREEN_DOT, RED_DOT = "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
 	NEWVOLUME = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dockvolume)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dock-volume)\n"
 	LISTofvolumes = oldLISTofvolumes = []
 	LISTofvolumes = getVolumes()
 	volumename = ""
@@ -125,7 +127,7 @@ def docker_image():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
 	NEWIMAGE = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dockimage)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dock-image)\n"
 	LISTofimages = oldLISTofimages = []
 	LISTofimages = getImages()
 	imagename = imageid = ""
@@ -174,7 +176,7 @@ def docker_container():
 	TMP_FILE = "/tmp/dockcontainer.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dockcontainer)\n"
+	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dock-container)\n"
 	LISTofcontainers = oldLISTofcontainers = []
 	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
 	LISTofcontainers = getContainers()
