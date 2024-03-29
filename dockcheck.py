@@ -72,7 +72,7 @@ if __name__ == "__main__":
 		CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"*{HOSTNAME}* (dockcheck)\n\
+		telegram_message(f"*{HOSTNAME}* (docker-check)\n\
 		- polling period: {SEC_REPEAT} seconds,\n\
 		- message type: {MESSAGE_TYPE},\n\
 		- currently monitoring: {getContainersCount()} containers,\n\
@@ -87,7 +87,7 @@ def docker_volume():
 	GREEN_DOT, RED_DOT = "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
 	NEWVOLUME = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dock-volume)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-volume)\n"
 	LISTofvolumes = oldLISTofvolumes = []
 	LISTofvolumes = getVolumes()
 	volumename = ""
@@ -127,7 +127,7 @@ def docker_image():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = GREEN_DOT
 	NEWIMAGE = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (dock-image)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-image)\n"
 	LISTofimages = oldLISTofimages = []
 	LISTofimages = getImages()
 	imagename = imageid = ""
@@ -176,7 +176,7 @@ def docker_container():
 	TMP_FILE = "/tmp/dockcontainer.tmp"
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (dock-container)\n"
+	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker-container)\n"
 	LISTofcontainers = oldLISTofcontainers = []
 	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
 	LISTofcontainers = getContainers()
@@ -208,7 +208,7 @@ def docker_container():
 					if containerattr != containerstatus:
 						containerstatus = f"{containerstatus} ({containerattr})"
 					if containerid not in oldSTRofcontainer and containername in oldSTRofcontainer:
-						containerstatus = f"{containerstatus.split()[0]} (id changed)"
+						containerstatus = f"{containerstatus.split()[0]} (changed)"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				# ORANGE_DOT - created, paused, restarting, removing, exited
