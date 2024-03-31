@@ -1,6 +1,8 @@
 # dockchek
 docker containers, images, volumes status notifier for Telegram, Discord
 
+![alt text](https://github.com/Vladimi2boom/dockchek/blob/main/screen/dockcheck2.jpg?raw=true)
+
 **config.json**
 ```
 {
