@@ -1,14 +1,23 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Copyright (c) 2boom 2024
-# pip install telebot docker schedule
+# pip install telebot discord_notify docker schedule
 
 import telebot
 import json
 import docker
 import os
 import time
+import discord_notify as dn
 from schedule import every, repeat, run_pending
+
+def getDockerCounts():
+	dockerCounts = []
+	docker_client = docker.from_env()
+	dockerCounts.append(len(docker_client.volumes.list()))
+	dockerCounts.append(len(docker_client.images.list()))
+	dockerCounts.append(len(docker_client.containers.list(all=True)))
+	return dockerCounts
 
 def getVolumes():
 	docker_client = docker.from_env()
@@ -17,24 +26,14 @@ def getVolumes():
 		volumes.append(f"{volume.short_id}")
 	return volumes
 
-def getVolumesCount():
-	docker_client = docker.from_env()
-	count = len(docker_client.volumes.list())
-	return count
-
 def getImages():
 	docker_client = docker.from_env()
 	images = []
 	for image in docker_client.images.list():
 		imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-		if imagename == "": imagename = image.short_id.split(':')[-1]
+		if imagename == '': imagename = image.short_id.split(':')[-1]
 		images.append(f"{image.short_id.split(':')[-1]} {imagename}")
 	return images
-
-def getImagesCount():
-	docker_client = docker.from_env()
-	count = len(docker_client.images.list())
-	return count
 
 def getContainers():
 	docker_client = docker.from_env()
@@ -46,38 +45,49 @@ def getContainers():
 			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	return containers
 
-def getContainersCount():
-	docker_client = docker.from_env()
-	count = len(docker_client.containers.list(all=True))
-	return count
-
-def telegram_message(message : str):
-	try:
-		tb.send_message(CHAT_ID, message, parse_mode="markdown")
-	except Exception as e:
-		print(f"error: {e}")
+def send_message(message : str):
+	if TELEGRAM_ON:
+		try:
+			tb.send_message(CHAT_ID, message, parse_mode="markdown")
+		except Exception as e:
+			print(f"error: {e}")
+	if DISCORD_ON:
+		try:
+			notifier.send(message.replace("- ", "").replace("*", "**"), print_message=False)
+		except Exception as e:
+			print(f"error: {e}")
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	MESSAGE_TYPE = "single"
+	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
 		file.close()
 		SEC_REPEAT = int(parsed_json["SEC_REPEAT"])
 		GROUP_MESSAGE = parsed_json["GROUP_MESSAGE"]
-		TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
-		CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
+		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
+		DISCORD_ON = parsed_json["DISCORD"]["ON"]
+		if TELEGRAM_ON:
+			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
+			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
+			tb = telebot.TeleBot(TOKEN)
+		if DISCORD_ON:
+			DISCORD_WEB = parsed_json["DISCORD"]["WEB"]
+			notifier = dn.Notifier(DISCORD_WEB)
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
-		tb = telebot.TeleBot(TOKEN)
-		telegram_message(f"*{HOSTNAME}* (docker-check)\n\
+		
+		send_message(f"*{HOSTNAME}* (docker-check)\n\
 		- polling period: {SEC_REPEAT} seconds,\n\
+		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
+		- messenging Discord: {str(DISCORD_ON).lower()},\n\
 		- message type: {MESSAGE_TYPE},\n\
-		- currently monitoring: {getContainersCount()} containers,\n\
-		- currently monitoring: {getImagesCount()} images,\n\
-		- currently monitoring: {getVolumesCount()} volumes.")
+		- currently monitoring: {dockerCounts[2]} containers,\n\
+		- currently monitoring: {dockerCounts[1]} images,\n\
+		- currently monitoring: {dockerCounts[0]} volumes.")
 	else:
 		print("config.json not found")
 		
@@ -118,8 +128,8 @@ def docker_volume():
 				MESSAGE += f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
 			else:
 				MESSAGE = f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
-				telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
+				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
 @repeat(every(SEC_REPEAT).seconds)
 def docker_image():
@@ -128,7 +138,7 @@ def docker_image():
 	STATUS_DOT = GREEN_DOT
 	NEWIMAGE = False
 	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-image)\n"
-	LISTofimages = oldLISTofimages = []
+	LISTofimages = oldLISTofimages = sort_message = []
 	LISTofimages = getImages()
 	imagename = imageid = ""
 	if not os.path.exists(TMP_FILE):
@@ -167,8 +177,12 @@ def docker_image():
 				MESSAGE = f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
 				if imageid == imagename:
 					MESSAGE = f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
-				telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
+				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE:
+			sort_message = MESSAGE.split("\n")
+			sort_message.sort()
+			MESSAGE = "\n".join(sort_message).lstrip("\n")
+			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 @repeat(every(SEC_REPEAT).seconds)
 def docker_container():
@@ -211,12 +225,11 @@ def docker_container():
 						containerstatus = f"{containerstatus.split()[0]} (changed)"
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
-				# ORANGE_DOT - created, paused, restarting, removing, exited
 				if GROUP_MESSAGE:
 					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
 				else:
-					telegram_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}*: {containerstatus}!\n")	
-		if GROUP_MESSAGE: telegram_message(f"{HEADER_MESSAGE}{MESSAGE}")
+					send_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}*: {containerstatus}!\n")	
+		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 while True:
     run_pending()
