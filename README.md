@@ -1,12 +1,17 @@
 # dockchek
-docker containers, images, volumes status notifier
+docker containers, images, volumes status notifier for Telegram, Discord
 
 **config.json**
 ```
 {
 	"TELEGRAM": {
+		"ON": true,
 		"TOKEN": "your_token",
 		"CHAT_ID": "your_chat_id"
+	},
+	"DISCORD": {
+		"ON": true,
+		"WEB": "web_your_channel"
 	},
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
