@@ -53,7 +53,7 @@ def send_message(message : str):
 			print(f"error: {e}")
 	if DISCORD_ON:
 		try:
-			notifier.send(message.replace("- ", "").replace("*", "**"), print_message=False)
+			notifier.send(message.replace("*", "**").replace("\t", ""), print_message=False)
 		except Exception as e:
 			print(f"error: {e}")
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 			notifier = dn.Notifier(DISCORD_WEB)
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		
-		send_message(f"*{HOSTNAME}* (docker-check)\n\
+		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor started:\n\
 		- polling period: {SEC_REPEAT} seconds,\n\
 		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
 		- messenging Discord: {str(DISCORD_ON).lower()},\n\
