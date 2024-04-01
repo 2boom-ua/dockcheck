@@ -16,8 +16,16 @@ def getDockerCounts():
 	docker_client = docker.from_env()
 	dockerCounts.append(len(docker_client.volumes.list()))
 	dockerCounts.append(len(docker_client.images.list()))
+	dockerCounts.append(len(docker_client.networks.list()))
 	dockerCounts.append(len(docker_client.containers.list(all=True)))
 	return dockerCounts
+	
+def getNetworks():
+	docker_client = docker.from_env()
+	networks = []
+	for network in docker_client.networks.list():
+		networks.append(f"{network.name}")
+	return networks
 
 def getVolumes():
 	docker_client = docker.from_env()
@@ -85,11 +93,52 @@ if __name__ == "__main__":
 		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
 		- messenging Discord: {str(DISCORD_ON).lower()},\n\
 		- message type: {MESSAGE_TYPE},\n\
-		- currently monitoring: {dockerCounts[2]} containers,\n\
+		- currently monitoring: {dockerCounts[3]} containers,\n\
 		- currently monitoring: {dockerCounts[1]} images,\n\
+		- currently monitoring: {dockerCounts[2]} networks,\n\
 		- currently monitoring: {dockerCounts[0]} volumes.")
 	else:
 		print("config.json not found")
+		
+@repeat(every(SEC_REPEAT).seconds)
+def docker_networks():
+	TMP_FILE = "/tmp/docknetworks.tmp"
+	GREEN_DOT, RED_DOT = "\U0001F7E2", "\U0001F534"
+	STATUS_DOT = GREEN_DOT
+	NEWNET = False
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-network)\n"
+	LISTofnetworks = oldLISTofnetworks = []
+	LISTofnetworks = getNetworks()
+	networkname = ""
+	if not os.path.exists(TMP_FILE):
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofnetworks))
+		file.close()
+	with open(TMP_FILE, "r") as file:
+		oldLISTofnetworks = file.read().split(",")
+	file.close()
+	if len(LISTofnetworks) >= len(oldLISTofnetworks):
+		result = list(set(LISTofnetworks) - set(oldLISTofnetworks))
+		NEWNET = True
+	else:
+		result = list(set(oldLISTofnetworks) - set(LISTofnetworks))
+		STATUS_DOT = RED_DOT
+		STATUS_MESSAGE = "removed"
+	if len(result) != 0:
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofnetworks))
+		file.close()
+		for i in range(len(result)):
+			networkname = result[i]
+			if NEWNET:
+				STATUS_DOT = GREEN_DOT
+				STATUS_MESSAGE = "created"
+			if GROUP_MESSAGE:
+				MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
+			else:
+				MESSAGE = f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
+				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
 @repeat(every(SEC_REPEAT).seconds)
 def docker_volume():
