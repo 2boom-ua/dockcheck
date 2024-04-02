@@ -240,7 +240,7 @@ def docker_container():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker-container)\n"
-	LISTofcontainers = oldLISTofcontainers = []
+	LISTofcontainers = oldLISTofcontainers = sort_message = []
 	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
 	LISTofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
