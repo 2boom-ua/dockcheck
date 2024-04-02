@@ -279,7 +279,11 @@ def docker_container():
 					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
 				else:
 					send_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}*: {containerstatus}!\n")	
-		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE:
+			sort_message = MESSAGE.split("\n")
+			sort_message.sort()
+			MESSAGE = "\n".join(sort_message).lstrip("\n")
+			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 while True:
     run_pending()
