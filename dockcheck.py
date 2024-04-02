@@ -272,6 +272,7 @@ def docker_container():
 						containerstatus = f"{containerstatus} ({containerattr})"
 					if containerid not in oldSTRofcontainer and containername in oldSTRofcontainer:
 						containerstatus = f"{containerstatus.split()[0]} (changed)"
+					if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				if GROUP_MESSAGE:
