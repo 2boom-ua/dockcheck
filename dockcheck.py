@@ -37,10 +37,13 @@ def getVolumes():
 def getImages():
 	docker_client = docker.from_env()
 	images = []
-	for image in docker_client.images.list():
-		imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-		if imagename == '': imagename = image.short_id.split(':')[-1]
-		images.append(f"{image.short_id.split(':')[-1]} {imagename}")
+	try:
+		for image in docker_client.images.list():
+			imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
+			if imagename == '': imagename = image.short_id.split(':')[-1]
+			images.append(f"{image.short_id.split(':')[-1]} {imagename}")
+	except Exception as e:
+			print(f"error: {e}")	
 	return images
 
 def getContainers():
@@ -241,15 +244,14 @@ def docker_container():
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker-container)\n"
 	LISTofcontainers = oldLISTofcontainers = sort_message = []
-	oldSTRofcontainer, containername, containerid, containerattr, containerstatus = "", "", "", "", "inactive"
+	containername, containerid, containerattr, containerstatus = "", "", "", "inactive"
 	LISTofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, "w") as file:
 			file.write(",".join(LISTofcontainers))
 		file.close()
 	with open(TMP_FILE, "r") as file:
-		oldSTRofcontainer = file.read()
-		oldLISTofcontainers = oldSTRofcontainer.split(",")
+		oldLISTofcontainers = file.read().split(",")
 	file.close()
 	if len(LISTofcontainers) >= len(oldLISTofcontainers):
 		result = list(set(LISTofcontainers) - set(oldLISTofcontainers)) 
@@ -268,10 +270,7 @@ def docker_container():
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
-					if containerattr != containerstatus:
-						containerstatus = f"{containerstatus} ({containerattr})"
-					if containerid not in oldSTRofcontainer and containername in oldSTRofcontainer:
-						containerstatus = f"{containerstatus.split()[0]} (changed)"
+					if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
 					if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
