@@ -11,6 +11,7 @@ import time
 import requests
 import discord_notify as dn
 from schedule import every, repeat, run_pending
+from urllib.error import URLError, HTTPError
 
 def getDockerCounts():
 	dockerCounts = []
