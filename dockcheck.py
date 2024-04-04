@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Copyright (c) 2boom 2024
-# pip install telebot discord_notify docker schedule
+# pip install telebot discord_notify docker schedule requests
 
 import telebot
 import json
 import docker
 import os
 import time
+import requests
 import discord_notify as dn
 from schedule import every, repeat, run_pending
+from datetime import datetime
 
 def getDockerCounts():
 	dockerCounts = []
@@ -67,6 +69,20 @@ def send_message(message : str):
 			notifier.send(message.replace("*", "**").replace("\t", ""), print_message=False)
 		except Exception as e:
 			print(f"error: {e}")
+	if GOTIFY_ON:
+		now = datetime.now()
+		data = {
+			"title": now.strftime("%d.%m.%Y %H:%M"),
+			"message": message.replace("*", "").replace("\t", ""),
+		}
+		headers = {
+			"X-Gotify-Key": GOTIFY_TOKEN,
+			"Content-Type": "application/json",
+		}
+		response = requests.post(GOTIFY_WEB, json=data, headers=headers)
+		if response.status_code != 200:
+			print(f"Failed to send message to Gotify. Status code: {response.status_code}")
+			print(response.text)
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
@@ -82,6 +98,7 @@ if __name__ == "__main__":
 		GROUP_MESSAGE = parsed_json["GROUP_MESSAGE"]
 		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
+		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
 			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
@@ -89,12 +106,15 @@ if __name__ == "__main__":
 		if DISCORD_ON:
 			DISCORD_WEB = parsed_json["DISCORD"]["WEB"]
 			notifier = dn.Notifier(DISCORD_WEB)
+		if GOTIFY_ON:
+			GOTIFY_WEB = parsed_json["GOTIFY"]["WEB"]
+			GOTIFY_TOKEN = parsed_json["GOTIFY"]["TOKEN"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
-		
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor started:\n\
 		- polling period: {SEC_REPEAT} seconds,\n\
 		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
 		- messenging Discord: {str(DISCORD_ON).lower()},\n\
+		- messenging Gotify: {str(GOTIFY_ON).lower()},\n\
 		- message type: {MESSAGE_TYPE},\n\
 		- currently monitoring: {dockerCounts[3]} containers,\n\
 		- currently monitoring: {dockerCounts[1]} images,\n\
