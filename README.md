@@ -22,7 +22,6 @@ docker containers, images, volumes, networks informer for Telegram, Discord, Got
 		"TOKEN": "your_token",
 		"WEB": "server_url/message"
 	},
-
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
