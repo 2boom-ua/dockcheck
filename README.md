@@ -1,5 +1,6 @@
 # dockchek
-docker containers, images, volumes, networks informer for Telegram, Discord
+docker containers, images, volumes, networks informer for Telegram, Discord, Gotify
+*** [Gotify](https://github.com/gotify/server)
 
 ![alt text](https://github.com/Vladimi2boom/dockchek/blob/main/screen/dockcheck2.jpg?raw=true)
 
@@ -15,6 +16,12 @@ docker containers, images, volumes, networks informer for Telegram, Discord
 		"ON": true,
 		"WEB": "web_your_channel"
 	},
+	"GOTIFY": {
+		"ON": true,
+		"TOKEN": "your_token",
+		"WEB": "server_url/message"
+	},
+
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
