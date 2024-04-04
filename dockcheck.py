@@ -45,7 +45,7 @@ def getImages():
 			if imagename == '': imagename = image.short_id.split(':')[-1]
 			images.append(f"{image.short_id.split(':')[-1]} {imagename}")
 	except Exception as e:
-			print(f"error: {e}")	
+			print(f"error: {e}")
 	return images
 
 def getContainers():
@@ -70,10 +70,9 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 	if GOTIFY_ON:
-		data = { "message": message.replace("*", "").replace("\t", "")}
-		headers = {"X-Gotify-Key": GOTIFY_TOKEN, "Content-Type": "application/json"}
+		message = message.replace("*", "").replace("\t", "")
 		try:
-			response = requests.post(GOTIFY_WEB, json=data, headers=headers)
+			response = requests.post(f'{GOTIFY_WEB}?token={GOTIFY_TOKEN}', json={"message": message})
 		except HTTPError as e:
 			print(f"reason: {e.reason}")
 
