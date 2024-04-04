@@ -11,7 +11,6 @@ import time
 import requests
 import discord_notify as dn
 from schedule import every, repeat, run_pending
-from datetime import datetime
 
 def getDockerCounts():
 	dockerCounts = []
@@ -70,19 +69,18 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 	if GOTIFY_ON:
-		now = datetime.now()
 		data = {
-			"title": now.strftime("%d.%m.%Y %H:%M"),
+			"title": "",
 			"message": message.replace("*", "").replace("\t", ""),
 		}
 		headers = {
 			"X-Gotify-Key": GOTIFY_TOKEN,
 			"Content-Type": "application/json",
 		}
-		response = requests.post(GOTIFY_WEB, json=data, headers=headers)
-		if response.status_code != 200:
-			print(f"Failed to send message to Gotify. Status code: {response.status_code}")
-			print(response.text)
+		try:
+			response = requests.post(GOTIFY_WEB, json=data, headers=headers)
+		except HTTPError as e:
+			print(f"reason: {e.reason}")
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
