@@ -70,14 +70,8 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 	if GOTIFY_ON:
-		data = {
-			"title": "",
-			"message": message.replace("*", "").replace("\t", ""),
-		}
-		headers = {
-			"X-Gotify-Key": GOTIFY_TOKEN,
-			"Content-Type": "application/json",
-		}
+		data = { "message": message.replace("*", "").replace("\t", "")}
+		headers = {"X-Gotify-Key": GOTIFY_TOKEN, "Content-Type": "application/json"}
 		try:
 			response = requests.post(GOTIFY_WEB, json=data, headers=headers)
 		except HTTPError as e:
