@@ -20,7 +20,7 @@ docker containers, images, volumes, networks informer for Telegram, Discord, Got
 	"GOTIFY": {
 		"ON": true,
 		"TOKEN": "your_token",
-		"WEB": "server_url/message"
+		"WEB": "server_url"
 	},
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
