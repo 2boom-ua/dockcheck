@@ -77,7 +77,7 @@ def send_message(message : str):
 			gotify.create_message(message, title = header)
 		except Exception as e:
 			print(f"error: {e}")
-			
+
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
