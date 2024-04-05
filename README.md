@@ -5,6 +5,11 @@ docker containers, images, volumes, networks informer for Telegram, Discord, Got
 
 ![alt text](https://github.com/Vladimi2boom/dockchek/blob/main/screen/dockcheck2.jpg?raw=true)
 
+
+```
+pip install -r requirements.txt
+```
+
 **config.json**
 ```
 {
