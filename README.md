@@ -30,6 +30,7 @@ pip install -r requirements.txt
 		"ON": true,
 		"SUB": "your_subscribe",
 		"WEB": "server_url"
+	},
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
