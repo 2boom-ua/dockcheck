@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Copyright (c) 2boom 2024
-# pip install telebot discord_notify docker schedule gotify
+# pip install telebot discord_notify docker schedule requests
 
 import telebot
 import json
 import docker
 import os
 import time
+import requests
 from gotify import Gotify
 import discord_notify as dn
 from schedule import every, repeat, run_pending
@@ -77,7 +78,12 @@ def send_message(message : str):
 			gotify.create_message(message, title = header)
 		except Exception as e:
 			print(f"error: {e}")
-			
+	if NTFY_ON:
+		try:
+			requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
+		except Exception as e:
+			print(f"error: {e}")
+
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -93,6 +99,7 @@ if __name__ == "__main__":
 		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
 		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
+		NTFY_ON = parsed_json["NTFY"]["ON"]
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
 			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
@@ -103,12 +110,16 @@ if __name__ == "__main__":
 		if GOTIFY_ON:
 			GOTIFY_WEB = parsed_json["GOTIFY"]["WEB"]
 			GOTIFY_TOKEN = parsed_json["GOTIFY"]["TOKEN"]
+		if NTFY_ON:
+			NTFY_WEB = parsed_json["NTFY"]["WEB"]
+			NTFY_SUB = parsed_json["NTFY"]["SUB"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor started:\n\
 		- polling period: {SEC_REPEAT} seconds,\n\
 		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
 		- messenging Discord: {str(DISCORD_ON).lower()},\n\
 		- messenging Gotify: {str(GOTIFY_ON).lower()},\n\
+		- messenging Ntfy: {str(NTFY_ON).lower()},\n\
 		- message type: {MESSAGE_TYPE},\n\
 		- currently monitoring: {dockerCounts[3]} containers,\n\
 		- currently monitoring: {dockerCounts[1]} images,\n\
