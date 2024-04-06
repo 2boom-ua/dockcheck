@@ -13,6 +13,11 @@
 		"TOKEN": "your_token",
 		"WEB": "server_url"
 	},
+	"NTFY": {
+		"ON": true,
+		"SUB": "your_subscribe",
+		"WEB": "server_url"
+	},
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
