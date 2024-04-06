@@ -1,5 +1,5 @@
 # dockchek
-docker containers, images, volumes, networks informer for Telegram, Discord, Gotify as linux service
+docker containers, images, volumes, networks informer for Telegram, Discord, Gotify, Ntfy as linux service
 
 *** [Gotify - a simple server for sending and receiving messages (in real time per WebSocket). ](https://github.com/gotify/server)
 
@@ -26,6 +26,10 @@ pip install -r requirements.txt
 		"TOKEN": "your_token",
 		"WEB": "server_url"
 	},
+	"NTFY": {
+		"ON": true,
+		"SUB": "your_subscribe",
+		"WEB": "server_url"
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
