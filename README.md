@@ -3,7 +3,6 @@ docker containers, images, volumes, networks informer for Telegram, Discord, Got
 
 *** [Gotify - a simple server for sending and receiving messages (in real time per WebSocket). ](https://github.com/gotify/server)
 
-![alt text](https://github.com/Vladimi2boom/dockchek/blob/main/screen/dockcheck2.jpg?raw=true)
 
 
 ```
