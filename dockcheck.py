@@ -68,16 +68,16 @@ def send_message(message : str):
 			notifier.send(message.replace("*", "**").replace("\t", ""), print_message=False)
 		except Exception as e:
 			print(f"error: {e}")
+	message = message.replace("*", "").replace("\t", "")
+	header = message[:message.index("\n")].rstrip("\n")
+	message = message[message.index("\n"):].strip("\n")
 	if GOTIFY_ON:
-		message = message.replace("*", "").replace("\t", "")
-		header = message[:message.index("\n")].rstrip("\n")
-		message = message[message.index("\n"):].strip("\n")
 		gotify = Gotify(base_url=GOTIFY_WEB, app_token=GOTIFY_TOKEN)
 		try:
 			gotify.create_message(message, title = header)
 		except Exception as e:
 			print(f"error: {e}")
-
+			
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
