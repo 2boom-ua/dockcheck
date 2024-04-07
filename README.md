@@ -1,7 +1,6 @@
 # dockchek
 docker containers, images, volumes, networks informer for Telegram, Discord, Gotify, Ntfy as linux service
 
-*** [Gotify - a simple server for sending and receiving messages (in real time per WebSocket). ](https://github.com/gotify/server)
 
 ![alt text](https://github.com/Vladimi2boom/dockchek/blob/main/screen/dockcheck3.jpg?raw=true)
 
