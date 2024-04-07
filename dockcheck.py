@@ -57,7 +57,7 @@ def getContainers():
 		except KeyError:
 			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']}")
 	return containers
-
+	
 def send_message(message : str):
 	if TELEGRAM_ON:
 		try:
