@@ -53,9 +53,9 @@ def getContainers():
 	containers = []
 	for container in docker_client.containers.list(all=True):
 		try:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']}")
 		except KeyError:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']}")
 	return containers
 
 def send_message(message : str):
@@ -269,7 +269,7 @@ def docker_container():
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker-container)\n"
 	LISTofcontainers = oldLISTofcontainers = sort_message = []
-	containername, containerid, containerattr, containerstatus = "", "", "", "inactive"
+	containername, containerattr, containerstatus = "", "", "inactive"
 	LISTofcontainers = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, "w") as file:
@@ -290,8 +290,7 @@ def docker_container():
 		for i in range(len(result)):
 			containername = "".join(result[i]).split()[0]
 			if containername != "":
-				containerattr = "".join(result[i]).split()[2]
-				containerid = "".join(result[i]).split()[-1]
+				containerattr = "".join(result[i]).split()[-1]
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
