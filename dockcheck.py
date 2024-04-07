@@ -89,6 +89,8 @@ if __name__ == "__main__":
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	MESSAGE_TYPE = "single"
+	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = False
+	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
