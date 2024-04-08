@@ -53,9 +53,9 @@ def getContainers():
 	containers = []
 	for container in docker_client.containers.list(all=True):
 		try:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
 		except KeyError:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']}")
+			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	return containers
 	
 def send_message(message : str):
@@ -83,6 +83,18 @@ def send_message(message : str):
 			requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
 		except Exception as e:
 			print(f"error: {e}")
+
+def messaging_service():
+	messaging = ""
+	if TELEGRAM_ON:
+		messaging += "- messenging: Telegram,\n"
+	if DISCORD_ON:
+		messaging += "- messenging: Discord,\n"
+	if GOTIFY_ON:
+		messaging += "- messenging: Gotify,\n"
+	if NTFY_ON:
+		messaging += "- messenging: Ntfy,\n"
+	return messaging
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
@@ -116,61 +128,13 @@ if __name__ == "__main__":
 			NTFY_WEB = parsed_json["NTFY"]["WEB"]
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
-		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor started:\n\
-		- polling period: {SEC_REPEAT} seconds,\n\
-		- messenging Telegram: {str(TELEGRAM_ON).lower()},\n\
-		- messenging Discord: {str(DISCORD_ON).lower()},\n\
-		- messenging Gotify: {str(GOTIFY_ON).lower()},\n\
-		- messenging Ntfy: {str(NTFY_ON).lower()},\n\
-		- message type: {MESSAGE_TYPE},\n\
-		- currently monitoring: {dockerCounts[3]} containers,\n\
-		- currently monitoring: {dockerCounts[1]} images,\n\
-		- currently monitoring: {dockerCounts[2]} networks,\n\
-		- currently monitoring: {dockerCounts[0]} volumes.")
+		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}- message type: {MESSAGE_TYPE},\n- polling period: {SEC_REPEAT} seconds,\n- currently monitoring: {dockerCounts[3]} containers,\n- currently monitoring: {dockerCounts[1]} images,\n- currently monitoring: {dockerCounts[2]} networks,\n- currently monitoring: {dockerCounts[0]} volumes.")
 	else:
 		print("config.json not found")
 		
 @repeat(every(SEC_REPEAT).seconds)
 def docker_checker():
-	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"
-	#docker-network
-	TMP_FILE = "/tmp/docknetworks.tmp"
-	STATUS_DOT = GREEN_DOT
-	NEWNET = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-network)\n"
-	LISTofnetworks = oldLISTofnetworks = result = []
-	LISTofnetworks = getNetworks()
-	networkname = ""
-	if not os.path.exists(TMP_FILE):
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofnetworks))
-		file.close()
-	with open(TMP_FILE, "r") as file:
-		oldLISTofnetworks = file.read().split(",")
-	file.close()
-	if len(LISTofnetworks) >= len(oldLISTofnetworks):
-		result = list(set(LISTofnetworks) - set(oldLISTofnetworks))
-		NEWNET = True
-	else:
-		result = list(set(oldLISTofnetworks) - set(LISTofnetworks))
-		STATUS_DOT = RED_DOT
-		STATUS_MESSAGE = "removed"
-	if len(result) != 0:
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofnetworks))
-		file.close()
-		for i in range(len(result)):
-			networkname = result[i]
-			if NEWNET:
-				STATUS_DOT = GREEN_DOT
-				STATUS_MESSAGE = "created"
-			if GROUP_MESSAGE:
-				MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
-			else:
-				MESSAGE = f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
-				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		
+	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"		
 	#docker-image 
 	TMP_FILE = "/tmp/dockimage.tmp"
 	STATUS_DOT = GREEN_DOT
@@ -221,6 +185,44 @@ def docker_checker():
 			sort_message.sort()
 			MESSAGE = "\n".join(sort_message).lstrip("\n")
 			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+	
+	#docker-network
+	TMP_FILE = "/tmp/docknetworks.tmp"
+	STATUS_DOT = GREEN_DOT
+	NEWNET = False
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-network)\n"
+	LISTofnetworks = oldLISTofnetworks = result = []
+	LISTofnetworks = getNetworks()
+	networkname = ""
+	if not os.path.exists(TMP_FILE):
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofnetworks))
+		file.close()
+	with open(TMP_FILE, "r") as file:
+		oldLISTofnetworks = file.read().split(",")
+	file.close()
+	if len(LISTofnetworks) >= len(oldLISTofnetworks):
+		result = list(set(LISTofnetworks) - set(oldLISTofnetworks))
+		NEWNET = True
+	else:
+		result = list(set(oldLISTofnetworks) - set(LISTofnetworks))
+		STATUS_DOT = RED_DOT
+		STATUS_MESSAGE = "removed"
+	if len(result) != 0:
+		with open(TMP_FILE, "w") as file:
+			file.write(",".join(LISTofnetworks))
+		file.close()
+		for i in range(len(result)):
+			networkname = result[i]
+			if NEWNET:
+				STATUS_DOT = GREEN_DOT
+				STATUS_MESSAGE = "created"
+			if GROUP_MESSAGE:
+				MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
+			else:
+				MESSAGE = f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
+				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 	#docker-volume
 	TMP_FILE = "/tmp/dockvolume.tmp"
@@ -287,7 +289,7 @@ def docker_checker():
 		for i in range(len(result)):
 			containername = "".join(result[i]).split()[0]
 			if containername != "":
-				containerattr = "".join(result[i]).split()[-1]
+				containerattr = "".join(result[i]).split()[2]
 				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
 				if containerstatus == "running":
 					STATUS_DOT = GREEN_DOT
