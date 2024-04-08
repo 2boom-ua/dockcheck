@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Copyright (c) 2boom 2024
-# pip install telebot discord_notify docker schedule requests
 
 import telebot
 import json
