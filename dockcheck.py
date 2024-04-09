@@ -90,8 +90,6 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 
-
-
 def messaging_service():
 	messaging = ""
 	if TELEGRAM_ON:
