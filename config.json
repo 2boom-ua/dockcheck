@@ -18,6 +18,10 @@
 		"SUB": "your_subscribe",
 		"WEB": "server_url"
 	},
+	"PUSHBULLET": {
+		"ON": false,
+		"API": "your_api_key"
+	},
 	"SEC_REPEAT": 10,
 	"GROUP_MESSAGE": true
 }
