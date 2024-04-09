@@ -142,11 +142,11 @@ if __name__ == "__main__":
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
 		- message type: {MESSAGE_TYPE},\n\
-		- polling period: {SEC_REPEAT} seconds,\n\
 		- monitoring: {dockerCounts[3]} containers,\n\
 		- monitoring: {dockerCounts[1]} images,\n\
 		- monitoring: {dockerCounts[2]} networks,\n\
-		- monitoring: {dockerCounts[0]} volumes.")
+		- monitoring: {dockerCounts[0]} volumes,\n\
+		- polling period: {SEC_REPEAT} seconds.")
 	else:
 		print("config.json not found")
 		
