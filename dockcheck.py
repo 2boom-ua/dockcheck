@@ -11,6 +11,7 @@ import requests
 from gotify import Gotify
 import discord_notify as dn
 from schedule import every, repeat, run_pending
+from pushbullet import Pushbullet
 
 def getDockerCounts():
 	dockerCounts = []
@@ -83,6 +84,13 @@ def send_message(message : str):
 			requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
 		except Exception as e:
 			print(f"error: {e}")
+	if PUSHBULLET_ON:
+		try:
+			push = pb.push_note(header, message)
+		except Exception as e:
+			print(f"error: {e}")
+
+
 
 def messaging_service():
 	messaging = ""
@@ -94,6 +102,8 @@ def messaging_service():
 		messaging += "- messenging: Gotify,\n"
 	if NTFY_ON:
 		messaging += "- messenging: Ntfy,\n"
+	if PUSHBULLET_ON:
+		messaging += "- messenging: Pushbullet,\n"
 	return messaging
 
 if __name__ == "__main__":
@@ -102,7 +112,7 @@ if __name__ == "__main__":
 	SEC_REPEAT = 20
 	MESSAGE_TYPE = "single"
 	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = False
-	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = ""
+	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_ON = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
@@ -114,6 +124,7 @@ if __name__ == "__main__":
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
 		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
 		NTFY_ON = parsed_json["NTFY"]["ON"]
+		PUSHBULLET_ON = parsed_json["PUSHBULLET"]["ON"]
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
 			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
@@ -127,6 +138,9 @@ if __name__ == "__main__":
 		if NTFY_ON:
 			NTFY_WEB = parsed_json["NTFY"]["WEB"]
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
+		if PUSHBULLET_ON:
+			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
+			pb = Pushbullet(PUSHBULLET_API)
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
 		- message type: {MESSAGE_TYPE},\n\

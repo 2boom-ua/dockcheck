@@ -1,7 +1,8 @@
 discord_notify==1.0.0
 docker_py==1.10.6
 gotify==0.6.0
+pushbullet.py==0.12.0
 pyTelegramBotAPI==4.14.0
-pyTelegramBotAPI==4.16.1
+pyTelegramBotAPI==4.17.0
 Requests==2.31.0
 schedule==1.2.1
