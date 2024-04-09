@@ -58,6 +58,7 @@ def getContainers():
 	return containers
 	
 def send_message(message : str):
+	message = message.replace("\t", "")
 	if TELEGRAM_ON:
 		try:
 			tb.send_message(CHAT_ID, message, parse_mode="markdown")
@@ -65,10 +66,10 @@ def send_message(message : str):
 			print(f"error: {e}")
 	if DISCORD_ON:
 		try:
-			notifier.send(message.replace("*", "**").replace("\t", ""), print_message=False)
+			notifier.send(message.replace("*", "**"), print_message=False)
 		except Exception as e:
 			print(f"error: {e}")
-	message = message.replace("*", "").replace("\t", "")
+	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
 	if GOTIFY_ON:
@@ -127,7 +128,13 @@ if __name__ == "__main__":
 			NTFY_WEB = parsed_json["NTFY"]["WEB"]
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
 		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
-		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}- message type: {MESSAGE_TYPE},\n- polling period: {SEC_REPEAT} seconds,\n- monitoring: {dockerCounts[3]} containers,\n- monitoring: {dockerCounts[1]} images,\n- monitoring: {dockerCounts[2]} networks,\n- monitoring: {dockerCounts[0]} volumes.")
+		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
+		- message type: {MESSAGE_TYPE},\n\
+		- polling period: {SEC_REPEAT} seconds,\n\
+		- monitoring: {dockerCounts[3]} containers,\n\
+		- monitoring: {dockerCounts[1]} images,\n\
+		- monitoring: {dockerCounts[2]} networks,\n\
+		- monitoring: {dockerCounts[0]} volumes.")
 	else:
 		print("config.json not found")
 		
