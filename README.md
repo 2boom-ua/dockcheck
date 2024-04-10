@@ -34,8 +34,7 @@ pip install -r requirements.txt
 		"ON": false,
 		"API": "your_api_key"
 	},
-	"SEC_REPEAT": 10,
-	"GROUP_MESSAGE": true
+	"SEC_REPEAT": 10
 }
 ```
 **make as service**
