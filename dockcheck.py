@@ -108,7 +108,6 @@ if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
-	MESSAGE_TYPE = "single"
 	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = False
 	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_ON = ""
 	dockerCounts = getDockerCounts()
@@ -117,7 +116,6 @@ if __name__ == "__main__":
 			parsed_json = json.loads(file.read())
 		file.close()
 		SEC_REPEAT = int(parsed_json["SEC_REPEAT"])
-		GROUP_MESSAGE = parsed_json["GROUP_MESSAGE"]
 		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
 		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
@@ -139,9 +137,7 @@ if __name__ == "__main__":
 		if PUSHBULLET_ON:
 			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
 			pb = Pushbullet(PUSHBULLET_API)
-		if GROUP_MESSAGE: MESSAGE_TYPE = "group"
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
-		- message type: {MESSAGE_TYPE},\n\
 		- monitoring: {dockerCounts[3]} containers,\n\
 		- monitoring: {dockerCounts[1]} images,\n\
 		- monitoring: {dockerCounts[2]} networks,\n\
@@ -188,21 +184,14 @@ def docker_checker():
 			if imageid != imagename and NEWIMAGE:
 				STATUS_DOT = GREEN_DOT
 				STATUS_MESSAGE = "created"
-			if GROUP_MESSAGE:
-				if imageid == imagename:
-					MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
-				else:
-					MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
+			if imageid == imagename:
+				MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
 			else:
-				MESSAGE = f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
-				if imageid == imagename:
-					MESSAGE = f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
-				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE:
-			sort_message = MESSAGE.split("\n")
-			sort_message.sort()
-			MESSAGE = "\n".join(sort_message).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+				MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
+		sort_message = MESSAGE.split("\n")
+		sort_message.sort()
+		MESSAGE = "\n".join(sort_message).lstrip("\n")
+		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 	
 	#docker-network
 	TMP_FILE = "/tmp/docknetworks.tmp"
@@ -235,12 +224,8 @@ def docker_checker():
 			if NEWNET:
 				STATUS_DOT = GREEN_DOT
 				STATUS_MESSAGE = "created"
-			if GROUP_MESSAGE:
-				MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
-			else:
-				MESSAGE = f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
-				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+			MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
+		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 	#docker-volume
 	TMP_FILE = "/tmp/dockvolume.tmp"
@@ -273,12 +258,8 @@ def docker_checker():
 			if NEWVOLUME:
 				STATUS_DOT = GREEN_DOT
 				STATUS_MESSAGE = "created"
-			if GROUP_MESSAGE:
-				MESSAGE += f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
-			else:
-				MESSAGE = f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
-				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-		if GROUP_MESSAGE: send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+			MESSAGE += f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
+		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
 	#docker-container
 	TMP_FILE = "/tmp/dockcontainer.tmp"
@@ -315,15 +296,11 @@ def docker_checker():
 					if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
-				if GROUP_MESSAGE:
-					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
-				else:
-					send_message(f"{HEADER_MESSAGE}{STATUS_DOT} *{containername}*: {containerstatus}!\n")	
-		if GROUP_MESSAGE:
-			sort_message = MESSAGE.split("\n")
-			sort_message.sort()
-			MESSAGE = "\n".join(sort_message).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+				MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
+		sort_message = MESSAGE.split("\n")
+		sort_message.sort()
+		MESSAGE = "\n".join(sort_message).lstrip("\n")
+		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 while True:
     run_pending()
