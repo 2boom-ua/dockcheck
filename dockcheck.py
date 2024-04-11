@@ -11,7 +11,6 @@ import requests
 from gotify import Gotify
 import discord_notify as dn
 from schedule import every, repeat, run_pending
-from pushbullet import Pushbullet
 
 def getDockerCounts():
 	dockerCounts = []
@@ -86,10 +85,12 @@ def send_message(message : str):
 			print(f"error: {e}")
 	if PUSHBULLET_ON:
 		try:
-			push = pb.push_note(header, message)
+			response = requests.post('https://api.pushbullet.com/v2/pushes',\
+			json={'type': 'note', 'title': header, 'body': message},\
+			headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
 		except Exception as e:
 			print(f"error: {e}")
-
+			
 def messaging_service():
 	messaging = ""
 	if TELEGRAM_ON:
@@ -136,7 +137,6 @@ if __name__ == "__main__":
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
 		if PUSHBULLET_ON:
 			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
-			pb = Pushbullet(PUSHBULLET_API)
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
 		- monitoring: {dockerCounts[3]} containers,\n\
 		- monitoring: {dockerCounts[1]} images,\n\
