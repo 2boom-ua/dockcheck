@@ -85,7 +85,7 @@ def send_message(message : str):
 			print(f"error: {e}")
 	if PUSHBULLET_ON:
 		try:
-			response = requests.post('https://api.pushbullet.com/v2/pushes',\
+			requests.post('https://api.pushbullet.com/v2/pushes',\
 			json={'type': 'note', 'title': header, 'body': message},\
 			headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
 		except Exception as e:
