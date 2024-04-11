@@ -1,8 +1,7 @@
 # dockchek
 docker containers, images, volumes, networks informer for Telegram, Discord, Gotify, Ntfy, Pushbullet as linux service
 
-
-![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen/dockcheck3.jpg?raw=true)
+![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen.jpg?raw=true)
 
 ```
 pip install -r requirements.txt
