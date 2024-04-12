@@ -8,7 +8,6 @@ import docker
 import os
 import time
 import requests
-from gotify import Gotify
 import discord_notify as dn
 from schedule import every, repeat, run_pending
 
@@ -73,9 +72,9 @@ def send_message(message : str):
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
 	if GOTIFY_ON:
-		gotify = Gotify(base_url=GOTIFY_WEB, app_token=GOTIFY_TOKEN)
 		try:
-			gotify.create_message(message, title = header)
+			requests.post(f"{GOTIFY_WEB}/message?token={GOTIFY_TOKEN}",\
+			json={'title': header, 'message': message, 'priority': 0})
 		except Exception as e:
 			print(f"error: {e}")
 	if NTFY_ON:
