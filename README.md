@@ -1,5 +1,5 @@
 # dockchek
-docker containers, images, volumes, networks informer for Telegram, Discord, Gotify, Ntfy, Pushbullet as linux service
+A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pushbullet) as linux service
 
 ![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen.jpg?raw=true)
 
