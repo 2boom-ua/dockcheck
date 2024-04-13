@@ -69,9 +69,8 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 	if SLACK_ON:
-		payload = {"text": message}
 		try:
-			requests.post(SLACK_WEB, json.dumps(payload))
+			requests.post(SLACK_WEB, json = {"text": message})
 		except Exception as e:
 			print(f"error: {e}")
 	message = message.replace("*", "")
