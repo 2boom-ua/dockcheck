@@ -6,7 +6,7 @@
 	},
 	"DISCORD": {
 		"ON": true,
-		"WEB": "web_your_channel"
+		"WEB": "web_hook_url"
 	},
 	"GOTIFY": {
 		"ON": true,
@@ -21,6 +21,10 @@
 	"PUSHBULLET": {
 		"ON": false,
 		"API": "your_api_key"
+	},
+	"SLACK": {
+		"ON": true,
+		"WEB": "web_hook_url"
 	},
 	"SEC_REPEAT": 10
 }
