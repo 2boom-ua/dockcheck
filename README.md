@@ -3,6 +3,7 @@ A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pus
 
 ![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen.jpg?raw=true)
 
+
 ```
 pip install -r requirements.txt
 ```
