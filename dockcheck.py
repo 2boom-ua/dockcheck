@@ -68,6 +68,12 @@ def send_message(message : str):
 			notifier.send(message.replace("*", "**"), print_message=False)
 		except Exception as e:
 			print(f"error: {e}")
+	if SLACK_ON:
+		payload = {"text": message}
+		try:
+			requests.post(SLACK_WEB, json.dumps(payload))
+		except Exception as e:
+			print(f"error: {e}")
 	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
@@ -108,13 +114,15 @@ def messaging_service():
 		messaging += "- messenging: Ntfy,\n"
 	if PUSHBULLET_ON:
 		messaging += "- messenging: Pushbullet,\n"
+	if SLACK_ON:
+		messaging += "- messenging: Slack,\n"
 	return messaging
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
-	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = False
+	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = False
 	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
@@ -126,6 +134,7 @@ if __name__ == "__main__":
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
 		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
 		NTFY_ON = parsed_json["NTFY"]["ON"]
+		SLACK_ON = parsed_json["SLACK"]["ON"]
 		PUSHBULLET_ON = parsed_json["PUSHBULLET"]["ON"]
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
@@ -142,6 +151,8 @@ if __name__ == "__main__":
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
 		if PUSHBULLET_ON:
 			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
+		if SLACK_ON:
+			SLACK_WEB = parsed_json["SLACK"]["WEB"]
 		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
 		- monitoring: {dockerCounts[3]} containers,\n\
 		- monitoring: {dockerCounts[1]} images,\n\
