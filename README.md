@@ -1,7 +1,7 @@
 # dockchek
 A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pushbullet, Slack) as linux service
 
-![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen.jpg?raw=true)
+![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true)
 
 
 ```
