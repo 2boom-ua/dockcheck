@@ -90,6 +90,12 @@ def send_message(message : str):
 		except Exception as e:
 			print(f"error: {e}")
 			
+def message_sort(message: str):
+	message_arr = []
+	message_arr = message.split("\n")
+	message_arr.sort()
+	return "\n".join(message_arr).lstrip("\n")
+		
 def messaging_service():
 	messaging = ""
 	if TELEGRAM_ON:
@@ -109,7 +115,7 @@ if __name__ == "__main__":
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = False
-	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_ON = ""
+	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
@@ -148,141 +154,75 @@ if __name__ == "__main__":
 @repeat(every(SEC_REPEAT).seconds)
 def docker_checker():
 	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"		
-	#docker-image 
-	TMP_FILE = "/tmp/dockimage.tmp"
-	STATUS_DOT = GREEN_DOT
-	NEWIMAGE = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-image)\n"
-	LISTofimages = oldLISTofimages = sort_message = result = []
-	LISTofimages = getImages()
-	imagename = imageid = ""
-	if not os.path.exists(TMP_FILE):
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofimages))
+	#docker-image-network-volume
+	tmpfiles = ["/tmp/dockimage.tmp", "/tmp/docknetworks.tmp", "/tmp/dockvolume.tmp"]
+	messageheader = ["image", "network", "volume"]
+	for j in range(len(tmpfiles)):
+		TMP_FILE = tmpfiles[j]
+		STATUS_DOT = GREEN_DOT
+		STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-{messageheader[j]})\n"
+		LISTofitem = oldLISTofitem = result = []
+		if messageheader[j] == "network":
+			LISTofitem = getNetworks()
+		elif messageheader[j] == "volume":
+			LISTofitem = getVolumes()
+		else:
+			imagename = imageid = ""
+			LISTofitem = getImages()
+		if not os.path.exists(TMP_FILE):
+			with open(TMP_FILE, "w") as file:
+				file.write(",".join(LISTofitem))
+			file.close()
+		with open(TMP_FILE, "r") as file:
+			oldLISTofitem = file.read().split(",")
 		file.close()
-	with open(TMP_FILE, "r") as file:
-		oldLISTofimages = file.read().split(",")
-	file.close()
-	if len(LISTofimages) >= len(oldLISTofimages):
-		result = list(set(LISTofimages) - set(oldLISTofimages))
-		NEWIMAGE = True
-	else:
-		result = list(set(oldLISTofimages) - set(LISTofimages))
-		STATUS_DOT = RED_DOT
-		STATUS_MESSAGE = "removed"
-	if len(result) != 0:
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofimages))
-		file.close()
-		for i in range(len(result)):
-			imagename = result[i].split()[-1]
-			imageid = result[i].split()[0]
-			if imageid == imagename and NEWIMAGE:
-				STATUS_DOT = ORANGE_DOT
-				STATUS_MESSAGE = "stored"
-			if imageid != imagename and NEWIMAGE:
-				STATUS_DOT = GREEN_DOT
-				STATUS_MESSAGE = "created"
-			if imageid == imagename:
-				MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
-			else:
-				MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
-		sort_message = MESSAGE.split("\n")
-		sort_message.sort()
-		MESSAGE = "\n".join(sort_message).lstrip("\n")
-		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-	
-	#docker-network
-	TMP_FILE = "/tmp/docknetworks.tmp"
-	STATUS_DOT = GREEN_DOT
-	NEWNET = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-network)\n"
-	LISTofnetworks = oldLISTofnetworks = result = []
-	LISTofnetworks = getNetworks()
-	networkname = ""
-	if not os.path.exists(TMP_FILE):
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofnetworks))
-		file.close()
-	with open(TMP_FILE, "r") as file:
-		oldLISTofnetworks = file.read().split(",")
-	file.close()
-	if len(LISTofnetworks) >= len(oldLISTofnetworks):
-		result = list(set(LISTofnetworks) - set(oldLISTofnetworks))
-		NEWNET = True
-	else:
-		result = list(set(oldLISTofnetworks) - set(LISTofnetworks))
-		STATUS_DOT = RED_DOT
-		STATUS_MESSAGE = "removed"
-	if len(result) != 0:
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofnetworks))
-		file.close()
-		for i in range(len(result)):
-			networkname = result[i]
-			if NEWNET:
-				STATUS_DOT = GREEN_DOT
-				STATUS_MESSAGE = "created"
-			MESSAGE += f"{STATUS_DOT} *{networkname}*: {STATUS_MESSAGE}!\n"
-		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-
-	#docker-volume
-	TMP_FILE = "/tmp/dockvolume.tmp"
-	STATUS_DOT = GREEN_DOT
-	NEWVOLUME = False
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-volume)\n"
-	LISTofvolumes = oldLISTofvolumes = result = []
-	LISTofvolumes = getVolumes()
-	volumename = ""
-	if not os.path.exists(TMP_FILE):
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofvolumes))
-		file.close()
-	with open(TMP_FILE, "r") as file:
-		oldLISTofvolumes = file.read().split(",")
-	file.close()
-	if len(LISTofvolumes) >= len(oldLISTofvolumes):
-		result = list(set(LISTofvolumes) - set(oldLISTofvolumes))
-		NEWVOLUME = True
-	else:
-		result = list(set(oldLISTofvolumes) - set(LISTofvolumes))
-		STATUS_DOT = RED_DOT
-		STATUS_MESSAGE = "removed"
-	if len(result) != 0:
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofvolumes))
-		file.close()
-		for i in range(len(result)):
-			volumename = result[i]
-			if NEWVOLUME:
-				STATUS_DOT = GREEN_DOT
-				STATUS_MESSAGE = "created"
-			MESSAGE += f"{STATUS_DOT} *{volumename}*: {STATUS_MESSAGE}!\n"
-		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		if len(LISTofitem) >= len(oldLISTofitem):
+			result = list(set(LISTofitem) - set(oldLISTofitem))
+			STATUS_DOT = GREEN_DOT
+			STATUS_MESSAGE = "created"
+		else:
+			result = list(set(oldLISTofitem) - set(LISTofitem))
+			STATUS_DOT = RED_DOT
+			STATUS_MESSAGE = "removed"
+		if len(result) != 0:
+			with open(TMP_FILE, "w") as file:
+				file.write(",".join(LISTofitem))
+			file.close()
+			for i in range(len(result)):
+				if messageheader[j] == "image":
+					imagename = result[i].split()[-1]
+					imageid = result[i].split()[0]
+					if imageid == imagename:
+						MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+					else:
+						MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
+				else:
+					MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
+			send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
 		
 	#docker-container
 	TMP_FILE = "/tmp/dockcontainer.tmp"
 	STOPPED = False
 	STATUS_DOT = ORANGE_DOT
 	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker-container)\n"
-	LISTofcontainers = oldLISTofcontainers = sort_message = result = []
+	LISTofitem = oldLISTofitem = result = []
 	containername, containerattr, containerstatus = "", "", "inactive"
-	LISTofcontainers = getContainers()
+	LISTofitem = getContainers()
 	if not os.path.exists(TMP_FILE):
 		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofcontainers))
+			file.write(",".join(LISTofitem))
 		file.close()
 	with open(TMP_FILE, "r") as file:
-		oldLISTofcontainers = file.read().split(",")
+		oldLISTofitem = file.read().split(",")
 	file.close()
-	if len(LISTofcontainers) >= len(oldLISTofcontainers):
-		result = list(set(LISTofcontainers) - set(oldLISTofcontainers)) 
+	if len(LISTofitem) >= len(oldLISTofitem):
+		result = list(set(LISTofitem) - set(oldLISTofitem)) 
 	else:
-		result = list(set(oldLISTofcontainers) - set(LISTofcontainers))
+		result = list(set(oldLISTofitem) - set(LISTofitem))
 		STOPPED = True
 	if len(result) != 0:
 		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofcontainers))
+			file.write(",".join(LISTofitem))
 		file.close()
 		for i in range(len(result)):
 			containername = "".join(result[i]).split()[0]
@@ -296,10 +236,7 @@ def docker_checker():
 				elif containerstatus == "inactive":
 					STATUS_DOT = RED_DOT
 				MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
-		sort_message = MESSAGE.split("\n")
-		sort_message.sort()
-		MESSAGE = "\n".join(sort_message).lstrip("\n")
-		send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+		send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
 
 while True:
     run_pending()
