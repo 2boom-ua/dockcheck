@@ -12,48 +12,78 @@ import discord_notify as dn
 from schedule import every, repeat, run_pending
 
 def getDockerCounts():
+	docker_online = True
+	try:
+		docker_client = docker.from_env()
+	except docker.errors.DockerException as e:
+		print(f"Error connecting to Docker daemon: {e}")
+		docker_online = False
 	dockerCounts = []
-	docker_client = docker.from_env()
-	dockerCounts.append(len(docker_client.volumes.list()))
-	dockerCounts.append(len(docker_client.images.list()))
-	dockerCounts.append(len(docker_client.networks.list()))
-	dockerCounts.append(len(docker_client.containers.list(all=True)))
+	if docker_online:
+		dockerCounts.append(len(docker_client.volumes.list()))
+		dockerCounts.append(len(docker_client.images.list()))
+		dockerCounts.append(len(docker_client.networks.list()))
+		dockerCounts.append(len(docker_client.containers.list(all=True)))
 	return dockerCounts
 	
 def getNetworks():
-	docker_client = docker.from_env()
+	docker_online = True
+	try:
+		docker_client = docker.from_env()
+	except docker.errors.DockerException as e:
+		print(f"Error connecting to Docker daemon: {e}")
+		docker_online = False
 	networks = []
-	for network in docker_client.networks.list():
-		networks.append(f"{network.name}")
+	if docker_online:
+		for network in docker_client.networks.list():
+			networks.append(f"{network.name}")
 	return networks
 
 def getVolumes():
-	docker_client = docker.from_env()
+	docker_online = True
+	try:
+		docker_client = docker.from_env()
+	except docker.errors.DockerException as e:
+		print(f"Error connecting to Docker daemon: {e}")
+		docker_online = False
 	volumes = []
-	for volume in docker_client.volumes.list():
-		volumes.append(f"{volume.short_id}")
+	if docker_online:
+		for volume in docker_client.volumes.list():
+			volumes.append(f"{volume.short_id}")
 	return volumes
 
 def getImages():
-	docker_client = docker.from_env()
-	images = []
+	docker_online = True
 	try:
-		for image in docker_client.images.list():
-			imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-			if imagename == '': imagename = image.short_id.split(':')[-1]
-			images.append(f"{image.short_id.split(':')[-1]} {imagename}")
-	except Exception as e:
-			print(f"error: {e}")
+		docker_client = docker.from_env()
+	except docker.errors.DockerException as e:
+		print(f"Error connecting to Docker daemon: {e}")
+		docker_online = False
+	images = []
+	if docker_online:
+		try:
+			for image in docker_client.images.list():
+				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
+				if imagename == '': imagename = image.short_id.split(':')[-1]
+				images.append(f"{image.short_id.split(':')[-1]} {imagename}")
+		except Exception as e:
+				print(f"error: {e}")
 	return images
 
 def getContainers():
-	docker_client = docker.from_env()
+	docker_online = True
+	try:
+		docker_client = docker.from_env()
+	except docker.errors.DockerException as e:
+		print(f"Error connecting to Docker daemon: {e}")
+		docker_online = False
 	containers = []
-	for container in docker_client.containers.list(all=True):
-		try:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
-		except KeyError:
-			containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
+	if docker_online:
+		for container in docker_client.containers.list(all=True):
+			try:
+				containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
+			except KeyError:
+				containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	return containers
 	
 def send_message(message : str):
@@ -121,7 +151,7 @@ if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
-	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = False
+	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = PUSHBULLET_ON = False
 	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = SLACK_WEB = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
@@ -133,8 +163,8 @@ if __name__ == "__main__":
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
 		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
 		NTFY_ON = parsed_json["NTFY"]["ON"]
-		SLACK_ON = parsed_json["SLACK"]["ON"]
 		PUSHBULLET_ON = parsed_json["PUSHBULLET"]["ON"]
+		SLACK_ON = parsed_json["SLACK"]["ON"]
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
 			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
@@ -179,36 +209,37 @@ def docker_checker():
 		else:
 			imagename = imageid = ""
 			LISTofitem = getImages()
-		if not os.path.exists(TMP_FILE):
-			with open(TMP_FILE, "w") as file:
-				file.write(",".join(LISTofitem))
+		if len(LISTofitem) != 0:
+			if not os.path.exists(TMP_FILE):
+				with open(TMP_FILE, "w") as file:
+					file.write(",".join(LISTofitem))
+				file.close()
+			with open(TMP_FILE, "r") as file:
+				oldLISTofitem = file.read().split(",")
 			file.close()
-		with open(TMP_FILE, "r") as file:
-			oldLISTofitem = file.read().split(",")
-		file.close()
-		if len(LISTofitem) >= len(oldLISTofitem):
-			result = list(set(LISTofitem) - set(oldLISTofitem))
-			STATUS_DOT = GREEN_DOT
-			STATUS_MESSAGE = "created"
-		else:
-			result = list(set(oldLISTofitem) - set(LISTofitem))
-			STATUS_DOT = RED_DOT
-			STATUS_MESSAGE = "removed"
-		if len(result) != 0:
-			with open(TMP_FILE, "w") as file:
-				file.write(",".join(LISTofitem))
-			file.close()
-			for i in range(len(result)):
-				if messageheader[j] == "image":
-					imagename = result[i].split()[-1]
-					imageid = result[i].split()[0]
-					if imageid == imagename:
-						MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+			if len(LISTofitem) >= len(oldLISTofitem):
+				result = list(set(LISTofitem) - set(oldLISTofitem))
+				STATUS_DOT = GREEN_DOT
+				STATUS_MESSAGE = "created"
+			else:
+				result = list(set(oldLISTofitem) - set(LISTofitem))
+				STATUS_DOT = RED_DOT
+				STATUS_MESSAGE = "removed"
+			if len(result) != 0:
+				with open(TMP_FILE, "w") as file:
+					file.write(",".join(LISTofitem))
+				file.close()
+				for i in range(len(result)):
+					if messageheader[j] == "image":
+						imagename = result[i].split()[-1]
+						imageid = result[i].split()[0]
+						if imageid == imagename:
+							MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+						else:
+							MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
 					else:
-						MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
-				else:
-					MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
-			send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
+						MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
+				send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
 		
 	#docker-container
 	TMP_FILE = "/tmp/dockcontainer.tmp"
@@ -218,35 +249,36 @@ def docker_checker():
 	LISTofitem = oldLISTofitem = result = []
 	containername, containerattr, containerstatus = "", "", "inactive"
 	LISTofitem = getContainers()
-	if not os.path.exists(TMP_FILE):
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofitem))
+	if len(LISTofitem) != 0:
+		if not os.path.exists(TMP_FILE):
+			with open(TMP_FILE, "w") as file:
+				file.write(",".join(LISTofitem))
+			file.close()
+		with open(TMP_FILE, "r") as file:
+			oldLISTofitem = file.read().split(",")
 		file.close()
-	with open(TMP_FILE, "r") as file:
-		oldLISTofitem = file.read().split(",")
-	file.close()
-	if len(LISTofitem) >= len(oldLISTofitem):
-		result = list(set(LISTofitem) - set(oldLISTofitem)) 
-	else:
-		result = list(set(oldLISTofitem) - set(LISTofitem))
-		STOPPED = True
-	if len(result) != 0:
-		with open(TMP_FILE, "w") as file:
-			file.write(",".join(LISTofitem))
-		file.close()
-		for i in range(len(result)):
-			containername = "".join(result[i]).split()[0]
-			if containername != "":
-				containerattr = "".join(result[i]).split()[2]
-				if not STOPPED: containerstatus = "".join(result[i]).split()[1]
-				if containerstatus == "running":
-					STATUS_DOT = GREEN_DOT
-					if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
-					if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
-				elif containerstatus == "inactive":
-					STATUS_DOT = RED_DOT
-				MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
-		send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
+		if len(LISTofitem) >= len(oldLISTofitem):
+			result = list(set(LISTofitem) - set(oldLISTofitem)) 
+		else:
+			result = list(set(oldLISTofitem) - set(LISTofitem))
+			STOPPED = True
+		if len(result) != 0:
+			with open(TMP_FILE, "w") as file:
+				file.write(",".join(LISTofitem))
+			file.close()
+			for i in range(len(result)):
+				containername = "".join(result[i]).split()[0]
+				if containername != "":
+					containerattr = "".join(result[i]).split()[2]
+					if not STOPPED: containerstatus = "".join(result[i]).split()[1]
+					if containerstatus == "running":
+						STATUS_DOT = GREEN_DOT
+						if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
+						if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
+					elif containerstatus == "inactive":
+						STATUS_DOT = RED_DOT
+					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
+			send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
 
 while True:
     run_pending()
