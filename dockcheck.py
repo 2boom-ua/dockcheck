@@ -18,12 +18,12 @@ def getDockerCounts():
 	except docker.errors.DockerException as e:
 		print(f"Error connecting to Docker daemon: {e}")
 		docker_online = False
-	dockerCounts = []
+	dockerCounts = {"volumes": "0", "images": "0", "networks": "0", "containers": "0"}
 	if docker_online:
-		dockerCounts.append(len(docker_client.volumes.list()))
-		dockerCounts.append(len(docker_client.images.list()))
-		dockerCounts.append(len(docker_client.networks.list()))
-		dockerCounts.append(len(docker_client.containers.list(all=True)))
+		dockerCounts["volumes"] = str(len(docker_client.volumes.list()))
+		dockerCounts["images"] = str(len(docker_client.images.list()))
+		dockerCounts["networks"] = str(len(docker_client.networks.list()))
+		dockerCounts["containers"] = str(len(docker_client.containers.list()))
 	return dockerCounts
 	
 def getNetworks():
@@ -124,35 +124,13 @@ def send_message(message : str):
 			headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
 		except Exception as e:
 			print(f"error: {e}")
-			
-def message_sort(message: str):
-	message_arr = []
-	message_arr = message.split("\n")
-	message_arr.sort()
-	return "\n".join(message_arr).lstrip("\n")
-		
-def messaging_service():
-	messaging = ""
-	if TELEGRAM_ON:
-		messaging += "- messenging: Telegram,\n"
-	if DISCORD_ON:
-		messaging += "- messenging: Discord,\n"
-	if GOTIFY_ON:
-		messaging += "- messenging: Gotify,\n"
-	if NTFY_ON:
-		messaging += "- messenging: Ntfy,\n"
-	if PUSHBULLET_ON:
-		messaging += "- messenging: Pushbullet,\n"
-	if SLACK_ON:
-		messaging += "- messenging: Slack,\n"
-	return messaging
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = PUSHBULLET_ON = False
-	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = SLACK_WEB = ""
+	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = SLACK_WEB = MESSAGING_SERVICE = ""
 	dockerCounts = getDockerCounts()
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
@@ -168,25 +146,31 @@ if __name__ == "__main__":
 		if TELEGRAM_ON:
 			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
 			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
+			MESSAGING_SERVICE += "- messenging: Telegram,\n"
 			tb = telebot.TeleBot(TOKEN)
 		if DISCORD_ON:
 			DISCORD_WEB = parsed_json["DISCORD"]["WEB"]
 			notifier = dn.Notifier(DISCORD_WEB)
+			MESSAGING_SERVICE += "- messenging: Discord,\n"
 		if GOTIFY_ON:
 			GOTIFY_WEB = parsed_json["GOTIFY"]["WEB"]
 			GOTIFY_TOKEN = parsed_json["GOTIFY"]["TOKEN"]
+			MESSAGING_SERVICE += "- messenging: Gotify,\n"
 		if NTFY_ON:
 			NTFY_WEB = parsed_json["NTFY"]["WEB"]
 			NTFY_SUB = parsed_json["NTFY"]["SUB"]
+			MESSAGING_SERVICE += "- messenging: Ntfy,\n"
 		if PUSHBULLET_ON:
 			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
+			MESSAGING_SERVICE += "- messenging: Pushbullet,\n"
 		if SLACK_ON:
 			SLACK_WEB = parsed_json["SLACK"]["WEB"]
-		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{messaging_service()}\
-		- monitoring: {dockerCounts[3]} containers,\n\
-		- monitoring: {dockerCounts[1]} images,\n\
-		- monitoring: {dockerCounts[2]} networks,\n\
-		- monitoring: {dockerCounts[0]} volumes,\n\
+			MESSAGING_SERVICE += "- messenging: Slack,\n"
+		send_message(f"*{HOSTNAME}* (docker-check)\ndocker monitor:\n{MESSAGING_SERVICE}\
+		- monitoring: {dockerCounts['containers']} containers,\n\
+		- monitoring: {dockerCounts['images']} images,\n\
+		- monitoring: {dockerCounts['networks']} networks,\n\
+		- monitoring: {dockerCounts['volumes']} volumes,\n\
 		- polling period: {SEC_REPEAT} seconds.")
 	else:
 		print("config.json not found")
@@ -239,7 +223,8 @@ def docker_checker():
 							MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
 					else:
 						MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
-				send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
+				MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
+				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
 	#docker-container
 	TMP_FILE = "/tmp/dockcontainer.tmp"
@@ -275,10 +260,10 @@ def docker_checker():
 						STATUS_DOT = GREEN_DOT
 						if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
 						if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
-					elif containerstatus == "inactive":
-						STATUS_DOT = RED_DOT
+					elif containerstatus == "inactive": STATUS_DOT = RED_DOT
 					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
-			send_message(message_sort(f"{HEADER_MESSAGE}{MESSAGE}"))
+			MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
+			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 
 while True:
     run_pending()
