@@ -177,7 +177,7 @@ if __name__ == "__main__":
 		
 @repeat(every(SEC_REPEAT).seconds)
 def docker_checker():
-	ORANGE_DOT, GREEN_DOT, RED_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534"		
+	ORANGE_DOT, GREEN_DOT, RED_DOT, WHITE_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U000026AA"
 	#docker-image-network-volume
 	tmpfiles = ["/tmp/dockimage.tmp", "/tmp/docknetworks.tmp", "/tmp/dockvolume.tmp"]
 	messageheader = ["image", "network", "volume"]
@@ -203,7 +203,7 @@ def docker_checker():
 			file.close()
 			if len(LISTofitem) >= len(oldLISTofitem):
 				result = list(set(LISTofitem) - set(oldLISTofitem))
-				STATUS_DOT = GREEN_DOT
+				STATUS_DOT = WHITE_DOT
 				STATUS_MESSAGE = "created"
 			else:
 				result = list(set(oldLISTofitem) - set(LISTofitem))
