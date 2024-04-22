@@ -68,35 +68,41 @@ def getContainers():
 def send_message(message : str):
 	message = message.replace("\t", "")
 	if TELEGRAM_ON:
-		response = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 	if DISCORD_ON:
-		response = requests.post(DISCORD_WEB, json={"content": message.replace("*", "**")})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post(DISCORD_WEB, json={"content": message.replace("*", "**")})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 	if SLACK_ON:
-		response = requests.post(SLACK_WEB, json = {"text": message})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post(SLACK_WEB, json = {"text": message})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
 	if GOTIFY_ON:
-		response = requests.post(f"{GOTIFY_WEB}/message?token={GOTIFY_TOKEN}",\
-		json={'title': header, 'message': message, 'priority': 0})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post(f"{GOTIFY_WEB}/message?token={GOTIFY_TOKEN}",\
+			json={'title': header, 'message': message, 'priority': 0})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 	if NTFY_ON:
-		response = requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 	if PUSHBULLET_ON:
-		response = requests.post('https://api.pushbullet.com/v2/pushes',\
-		json={'type': 'note', 'title': header, 'body': message},\
-		headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
-		if response.status_code != 200:
-			print(f"error: {response.status_code}")
+		try:
+			response = requests.post('https://api.pushbullet.com/v2/pushes',\
+			json={'type': 'note', 'title': header, 'body': message},\
+			headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
+		except requests.exceptions.RequestException as e:
+			print("error:", e)
 
 if __name__ == "__main__":
 	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
