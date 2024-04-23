@@ -9,7 +9,7 @@ import time
 import requests
 from schedule import every, repeat, run_pending
 
-def get_docker_env():
+def getDockerEnv():
 	docker_client = []
 	try:
 		docker_client = docker.from_env()
@@ -19,43 +19,34 @@ def get_docker_env():
 
 def getDockerCounts():
 	dockerCounts = {"volumes": "0", "images": "0", "networks": "0", "containers": "0"}
-	docker_client = get_docker_env()
+	docker_client = getDockerEnv()
 	if docker_client:
 		dockerCounts["volumes"] = str(len(docker_client.volumes.list()))
 		dockerCounts["images"] = str(len(docker_client.images.list()))
 		dockerCounts["networks"] = str(len(docker_client.networks.list()))
 		dockerCounts["containers"] = str(len(docker_client.containers.list()))
 	return dockerCounts
-	
-def getNetworks():
-	networks = []
-	docker_client = get_docker_env()
-	if docker_client: 
-		for network in docker_client.networks.list():
-			networks.append(f"{network.name}")
-	return networks
 
-def getVolumes():
-	volumes = []
-	docker_client = get_docker_env()
-	if docker_client: 
-		for volume in docker_client.volumes.list():
-			volumes.append(f"{volume.short_id}")
-	return volumes
-
-def getImages():
-	images = []
-	docker_client = get_docker_env()
-	if docker_client: 
-		for image in docker_client.images.list():
-			imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-			if imagename == '': imagename = image.short_id.split(':')[-1]
-			images.append(f"{image.short_id.split(':')[-1]} {imagename}")
-	return images
+def getDockerData(what):
+	returndata = []
+	docker_client = getDockerEnv()
+	if docker_client:
+		if what == "network":
+			for network in docker_client.networks.list():
+				returndata.append(f"{network.name}")
+		elif what == "image":
+			for image in docker_client.images.list():
+				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
+				if imagename == '': imagename = image.short_id.split(':')[-1]
+				returndata.append(f"{image.short_id.split(':')[-1]} {imagename}")
+		else:
+			for volume in docker_client.volumes.list():
+				returndata.append(f"{volume.short_id}")
+	return returndata
 
 def getContainers():
 	containers = []
-	docker_client = get_docker_env()
+	docker_client = getDockerEnv()
 	if docker_client: 
 		for container in docker_client.containers.list(all=True):
 			container_info = docker_client.api.inspect_container(container.id)
@@ -163,13 +154,8 @@ def docker_checker():
 		STATUS_DOT = GREEN_DOT
 		STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker-{typeofcheck[j]})\n"
 		ListOfItem = oldListOfItem = result = []
-		if typeofcheck[j] == "network":
-			ListOfItem = getNetworks()
-		elif typeofcheck[j] == "volume":
-			ListOfItem = getVolumes()
-		else:
-			imagename = imageid = ""
-			ListOfItem = getImages()
+		imagename = imageid = ""
+		ListOfItem = getDockerData(typeofcheck[j])
 		if ListOfItem:
 			if not os.path.exists(TMP_FILE):
 				with open(TMP_FILE, "w") as file:
@@ -195,11 +181,13 @@ def docker_checker():
 						imagename = result[i].split()[-1]
 						imageid = result[i].split()[0]
 						if imageid == imagename:
+							if imageid in ",".join(oldListOfItem) and STATUS_DOT != RED_DOT: STATUS_MESSAGE = "stored"
 							MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
 						else:
 							MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
 					else:
 						MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
+					if STATUS_DOT == YELLOW_DOT: STATUS_MESSAGE = "created"
 				MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
 				send_message(f"{HEADER_MESSAGE}{MESSAGE}")
 		
