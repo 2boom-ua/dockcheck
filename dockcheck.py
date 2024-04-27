@@ -9,6 +9,14 @@ import time
 import requests
 from schedule import every, repeat, run_pending
 
+def getHostname():
+	hostname = ""
+	if os.path.exists('/proc/sys/kernel/hostname'):
+		with open('/proc/sys/kernel/hostname', "r") as file:
+			hostname = file.read().strip('\n')
+		file.close()
+	return hostname
+
 def getDockerEnv():
 	docker_client = []
 	try:
@@ -96,7 +104,7 @@ def send_message(message : str):
 			print("error:", e)
 
 if __name__ == "__main__":
-	HOSTNAME = open("/proc/sys/kernel/hostname", "r").read().strip("\n")
+	HOSTNAME = getHostname()
 	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 	SEC_REPEAT = 20
 	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = PUSHBULLET_ON = False
