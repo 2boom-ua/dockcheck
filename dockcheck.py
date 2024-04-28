@@ -14,7 +14,6 @@ def getHostname():
 	if os.path.exists('/proc/sys/kernel/hostname'):
 		with open('/proc/sys/kernel/hostname', "r") as file:
 			hostname = file.read().strip('\n')
-		file.close()
 	return hostname
 
 def getDockerEnv():
@@ -113,7 +112,6 @@ if __name__ == "__main__":
 	if os.path.exists(f"{CURRENT_PATH}/config.json"):
 		with open(f"{CURRENT_PATH}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
-		file.close()
 		SEC_REPEAT = int(parsed_json["SEC_REPEAT"])
 		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
 		DISCORD_ON = parsed_json["DISCORD"]["ON"]
@@ -168,10 +166,8 @@ def docker_checker():
 			if not os.path.exists(TMP_FILE):
 				with open(TMP_FILE, "w") as file:
 					file.write(",".join(ListOfItem))
-				file.close()
 			with open(TMP_FILE, "r") as file:
 				oldListOfItem = file.read().split(",")
-			file.close()
 			if len(ListOfItem) >= len(oldListOfItem):
 				result = list(set(ListOfItem) - set(oldListOfItem))
 				STATUS_DOT = YELLOW_DOT
@@ -183,7 +179,6 @@ def docker_checker():
 			if result:
 				with open(TMP_FILE, "w") as file:
 					file.write(",".join(ListOfItem))
-				file.close()
 				for i in range(len(result)):
 					if typeofcheck[j] == "image":
 						imagename = result[i].split()[-1]
@@ -211,10 +206,8 @@ def docker_checker():
 		if not os.path.exists(TMP_FILE):
 			with open(TMP_FILE, "w") as file:
 				file.write(",".join(ListOfItem))
-			file.close()
 		with open(TMP_FILE, "r") as file:
 			oldListOfItem = file.read().split(",")
-		file.close()
 		if len(ListOfItem) >= len(oldListOfItem):
 			result = list(set(ListOfItem) - set(oldListOfItem)) 
 		else:
@@ -223,7 +216,6 @@ def docker_checker():
 		if result:
 			with open(TMP_FILE, "w") as file:
 				file.write(",".join(ListOfItem))
-			file.close()
 			for i in range(len(result)):
 				containername = "".join(result[i]).split()[0]
 				if containername != "":
