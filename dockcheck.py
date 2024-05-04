@@ -164,7 +164,7 @@ def docker_checker():
 	#docker-image
 	global oldListOfImage
 	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.image)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.images)\n"
 	ListOfImage = result = []
 	imagename = imageid = ""
 	ListOfImage = getDockerData("image")
@@ -195,7 +195,7 @@ def docker_checker():
 
 	#docker-volume
 	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.volume)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.volumes)\n"
 	global oldListOfVolume
 	ListOfVolume = result = []
 	ListOfVolume = getDockerData("volume")
@@ -220,7 +220,7 @@ def docker_checker():
 
 	#docker-network
 	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.network)\n"
+	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.networks)\n"
 	global oldListOfNetwork
 	ListOfNetwork = result = []
 	ListOfNetwork = getDockerData("network")
@@ -246,7 +246,7 @@ def docker_checker():
 	#docker-container
 	STOPPED = False
 	STATUS_DOT = ORANGE_DOT
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker.container)\n"
+	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker.containers)\n"
 	global oldListOfContainer
 	ListOfContainer = result = []
 	containername, containerattr, containerstatus = "", "", "inactive"
