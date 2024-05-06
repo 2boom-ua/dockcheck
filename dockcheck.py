@@ -28,14 +28,14 @@ def getDockerEnv():
 
 
 def getDockerCounts():
-	dockerCounts = {"volumes": "0", "images": "0", "networks": "0", "containers": "0"}
+	docker_counts = {"volumes": "0", "images": "0", "networks": "0", "containers": "0"}
 	docker_client = getDockerEnv()
 	if docker_client:
-		dockerCounts["volumes"] = str(len(docker_client.volumes.list()))
-		dockerCounts["images"] = str(len(docker_client.images.list()))
-		dockerCounts["networks"] = str(len(docker_client.networks.list()))
-		dockerCounts["containers"] = str(len(docker_client.containers.list()))
-	return dockerCounts
+		docker_counts["volumes"] = str(len(docker_client.volumes.list()))
+		docker_counts["images"] = str(len(docker_client.images.list()))
+		docker_counts["networks"] = str(len(docker_client.networks.list()))
+		docker_counts["containers"] = str(len(docker_client.containers.list()))
+	return docker_counts
 
 
 def getDockerData(what):
@@ -68,213 +68,215 @@ def getContainers():
 				containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	return containers
 
-	
-def send_message(message : str):
+
+def SendMessage(message : str):
 	message = message.replace("\t", "")
-	if TELEGRAM_ON:
+	if telegram_on:
 		try:
-			response = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"})
+			response = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
-	if DISCORD_ON:
+	if discord_on:
 		try:
-			response = requests.post(DISCORD_WEB, json={"content": message.replace("*", "**")})
+			response = requests.post(discord_web, json={"content": message.replace("*", "**")})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
-	if SLACK_ON:
+	if slack_on:
 		try:
-			response = requests.post(SLACK_WEB, json = {"text": message})
+			response = requests.post(slack_web, json = {"text": message})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
 	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
-	if GOTIFY_ON:
+	if gotify_on:
 		try:
-			response = requests.post(f"{GOTIFY_WEB}/message?token={GOTIFY_TOKEN}",\
+			response = requests.post(f"{gotify_web}/message?token={gotify_token}",\
 			json={'title': header, 'message': message, 'priority': 0})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
-	if NTFY_ON:
+	if ntfy_on:
 		try:
-			response = requests.post(f"{NTFY_WEB}/{NTFY_SUB}", data=message.encode(encoding='utf-8'), headers={"Title": header})
+			response = requests.post(f"{ntfy_web}/{ntfy_sub}", data=message.encode(encoding='utf-8'), headers={"Title": header})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
-	if PUSHBULLET_ON:
+	if pushbullet_on:
 		try:
 			response = requests.post('https://api.pushbullet.com/v2/pushes',\
 			json={'type': 'note', 'title': header, 'body': message},\
-			headers={'Access-Token': PUSHBULLET_API, 'Content-Type': 'application/json'})
+			headers={'Access-Token': pushbullet_api, 'Content-Type': 'application/json'})
 		except requests.exceptions.RequestException as e:
 			print("error:", e)
 
 
 if __name__ == "__main__":
-	HOSTNAME = getHostname()
-	CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-	SEC_REPEAT = 20
-	oldListOfContainer = oldListOfNetwork = oldListOfVolume = oldListOfImage = []
-	TELEGRAM_ON = DISCORD_ON = GOTIFY_ON = NTFY_ON = SLACK_ON = PUSHBULLET_ON = False
-	TOKEN = CHAT_ID = DISCORD_WEB = GOTIFY_WEB = GOTIFY_TOKEN = NTFY_WEB = NTFY_SUB = PUSHBULLET_API = SLACK_WEB = MESSAGING_SERVICE = ""
-	dockerCounts = getDockerCounts()
-	if os.path.exists(f"{CURRENT_PATH}/config.json"):
-		with open(f"{CURRENT_PATH}/config.json", "r") as file:
+	hostname = getHostname()
+	current_path = os.path.dirname(os.path.realpath(__file__))
+	sec_repeat = 20
+	old_list_container = old_list_network = old_list_volume = old_list_image = []
+	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
+	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = messaging_service = ""
+	docker_counts = getDockerCounts()
+	if os.path.exists(f"{current_path}/config.json"):
+		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
-		SEC_REPEAT = int(parsed_json["SEC_REPEAT"])
-		TELEGRAM_ON = parsed_json["TELEGRAM"]["ON"]
-		DISCORD_ON = parsed_json["DISCORD"]["ON"]
-		GOTIFY_ON = parsed_json["GOTIFY"]["ON"]
-		NTFY_ON = parsed_json["NTFY"]["ON"]
-		PUSHBULLET_ON = parsed_json["PUSHBULLET"]["ON"]
-		SLACK_ON = parsed_json["SLACK"]["ON"]
-		if TELEGRAM_ON:
-			TOKEN = parsed_json["TELEGRAM"]["TOKEN"]
-			CHAT_ID = parsed_json["TELEGRAM"]["CHAT_ID"]
-			MESSAGING_SERVICE += "- messenging: Telegram,\n"
-		if DISCORD_ON:
-			DISCORD_WEB = parsed_json["DISCORD"]["WEB"]
-			MESSAGING_SERVICE += "- messenging: Discord,\n"
-		if GOTIFY_ON:
-			GOTIFY_WEB = parsed_json["GOTIFY"]["WEB"]
-			GOTIFY_TOKEN = parsed_json["GOTIFY"]["TOKEN"]
-			MESSAGING_SERVICE += "- messenging: Gotify,\n"
-		if NTFY_ON:
-			NTFY_WEB = parsed_json["NTFY"]["WEB"]
-			NTFY_SUB = parsed_json["NTFY"]["SUB"]
-			MESSAGING_SERVICE += "- messenging: Ntfy,\n"
-		if PUSHBULLET_ON:
-			PUSHBULLET_API = parsed_json["PUSHBULLET"]["API"]
-			MESSAGING_SERVICE += "- messenging: Pushbullet,\n"
-		if SLACK_ON:
-			SLACK_WEB = parsed_json["SLACK"]["WEB"]
-			MESSAGING_SERVICE += "- messenging: Slack,\n"
-		send_message(f"*{HOSTNAME}* (docker.check)\ndocker monitor:\n{MESSAGING_SERVICE}\
-		- monitoring: {dockerCounts['containers']} containers,\n\
-		- monitoring: {dockerCounts['images']} images,\n\
-		- monitoring: {dockerCounts['networks']} networks,\n\
-		- monitoring: {dockerCounts['volumes']} volumes,\n\
-		- polling period: {SEC_REPEAT} seconds.")
+		sec_repeat = int(parsed_json["SEC_REPEAT"])
+		telegram_on = parsed_json["TELEGRAM"]["ON"]
+		discord_on = parsed_json["DISCORD"]["ON"]
+		gotify_on = parsed_json["GOTIFY"]["ON"]
+		ntfy_on = parsed_json["NTFY"]["ON"]
+		pushbullet_on = parsed_json["PUSHBULLET"]["ON"]
+		slack_on = parsed_json["SLACK"]["ON"]
+		if telegram_on:
+			token = parsed_json["TELEGRAM"]["TOKEN"]
+			chat_id = parsed_json["TELEGRAM"]["CHAT_ID"]
+			messaging_service += "- messenging: Telegram,\n"
+		if discord_on:
+			discord_web = parsed_json["DISCORD"]["WEB"]
+			messaging_service += "- messenging: Discord,\n"
+		if gotify_on:
+			gotify_web = parsed_json["GOTIFY"]["WEB"]
+			gotify_token = parsed_json["GOTIFY"]["TOKEN"]
+			messaging_service += "- messenging: Gotify,\n"
+		if ntfy_on:
+			ntfy_web = parsed_json["NTFY"]["WEB"]
+			ntfy_sub = parsed_json["NTFY"]["SUB"]
+			messaging_service += "- messenging: Ntfy,\n"
+		if pushbullet_on:
+			pushbullet_api = parsed_json["PUSHBULLET"]["API"]
+			messaging_service += "- messenging: Pushbullet,\n"
+		if slack_on:
+			slack_web = parsed_json["SLACK"]["WEB"]
+			messaging_service += "- messenging: Slack,\n"
+		SendMessage(f"*{hostname}* (docker.check)\ndocker monitor:\n{messaging_service}\
+		- monitoring: {docker_counts['containers']} containers,\n\
+		- monitoring: {docker_counts['images']} images,\n\
+		- monitoring: {docker_counts['networks']} networks,\n\
+		- monitoring: {docker_counts['volumes']} volumes,\n\
+		- polling period: {sec_repeat} seconds.")
 	else:
 		print("config.json not found")
 
-		
-@repeat(every(SEC_REPEAT).seconds)
+
+@repeat(every(sec_repeat).seconds)
 def docker_checker():
-	ORANGE_DOT, GREEN_DOT, RED_DOT, YELLOW_DOT = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
+	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	#docker-image
-	global oldListOfImage
-	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.images)\n"
-	ListOfImage = result = []
+	global old_list_image
+	status_dot = green_dot
+	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
+	list_image = result = []
 	imagename = imageid = ""
-	ListOfImage = getDockerData("image")
-	if ListOfImage:
-		if len(oldListOfImage) == 0: oldListOfImage = ListOfImage
-		if len(ListOfImage) >= len(oldListOfImage):
-			result = list(set(ListOfImage) - set(oldListOfImage))
-			STATUS_DOT = YELLOW_DOT
-			STATUS_MESSAGE = "created"
+	list_image = getDockerData("image")
+	if list_image:
+		if len(old_list_image) == 0: old_list_image = list_image
+		if len(list_image) >= len(old_list_image):
+			result = list(set(list_image) - set(old_list_image))
+			status_dot = yellow_dot
+			status_message = "created"
 		else:
-			result = list(set(oldListOfImage) - set(ListOfImage))
-			STATUS_DOT = RED_DOT
-			STATUS_MESSAGE = "removed"
+			result = list(set(old_list_image) - set(list_image))
+			status_dot = red_dot
+			status_message = "removed"
 		if result:
 			for i in range(len(result)):
 				imagename = result[i].split()[-1]
 				imageid = result[i].split()[0]
 				if imageid == imagename:
-					if imageid in ",".join(oldListOfImage) and STATUS_DOT != RED_DOT: STATUS_MESSAGE = "stored"
-					MESSAGE += f"{STATUS_DOT} *{imagename}*: {STATUS_MESSAGE}!\n"
+					if imageid in ",".join(old_list_image) and status_dot != red_dot: status_message = "stored"
+					message += f"{status_dot} *{imagename}*: {status_message}!\n"
 				else:
-					MESSAGE += f"{STATUS_DOT} *{imagename}* ({imageid}): {STATUS_MESSAGE}!\n"
-				if STATUS_DOT == YELLOW_DOT: STATUS_MESSAGE = "created"
-			oldListOfImage = ListOfImage
-			MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
+				if status_dot == yellow_dot: status_message = "created"
+			old_list_image = list_image
+			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			SendMessage(f"{header_message}{message}")
 
 
 	#docker-volume
-	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.volumes)\n"
-	global oldListOfVolume
+	status_dot = green_dot
+	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
+	global old_list_volume
 	ListOfVolume = result = []
 	ListOfVolume = getDockerData("volume")
 	if ListOfVolume:
-		if len(oldListOfVolume) == 0: oldListOfVolume = ListOfVolume
-		if len(ListOfVolume) >= len(oldListOfVolume):
-			result = list(set(ListOfVolume) - set(oldListOfVolume))
-			STATUS_DOT = YELLOW_DOT
-			STATUS_MESSAGE = "created"
+		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
+		if len(ListOfVolume) >= len(old_list_volume):
+			result = list(set(ListOfVolume) - set(old_list_volume))
+			status_dot = yellow_dot
+			status_message = "created"
 		else:
-			result = list(set(oldListOfVolume) - set(ListOfVolume))
-			STATUS_DOT = RED_DOT
-			STATUS_MESSAGE = "removed"
+			result = list(set(old_list_volume) - set(ListOfVolume))
+			status_dot = red_dot
+			status_message = "removed"
 		if result:
-			oldListOfVolume = ListOfVolume
+			old_list_volume = ListOfVolume
 			for i in range(len(result)):
-				MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
-				if STATUS_DOT == YELLOW_DOT: STATUS_MESSAGE = "created"
-			MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
+				if status_dot == yellow_dot: status_message = "created"
+			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			SendMessage(f"{header_message}{message}")
 
 
 	#docker-network
-	STATUS_DOT = GREEN_DOT
-	STATUS_MESSAGE, MESSAGE, HEADER_MESSAGE = "", "", f"*{HOSTNAME}* (docker.networks)\n"
-	global oldListOfNetwork
-	ListOfNetwork = result = []
-	ListOfNetwork = getDockerData("network")
-	if ListOfNetwork:
-		if len(oldListOfNetwork) == 0: oldListOfNetwork = ListOfNetwork
-		if len(ListOfNetwork) >= len(oldListOfNetwork):
-			result = list(set(ListOfNetwork) - set(oldListOfNetwork))
-			STATUS_DOT = YELLOW_DOT
-			STATUS_MESSAGE = "created"
+	status_dot = green_dot
+	message, status_message, header_message = "", "", f"*{hostname}* (docker.networks)\n"
+	global old_list_network
+	list_network = result = []
+	list_network = getDockerData("network")
+	if list_network:
+		if len(old_list_network) == 0: old_list_network = list_network
+		if len(list_network) >= len(old_list_network):
+			result = list(set(list_network) - set(old_list_network))
+			status_dot = yellow_dot
+			status_message = "created"
 		else:
-			result = list(set(oldListOfNetwork) - set(ListOfNetwork))
-			STATUS_DOT = RED_DOT
-			STATUS_MESSAGE = "removed"
+			result = list(set(old_list_network) - set(list_network))
+			status_dot = red_dot
+			status_message = "removed"
 		if result:
-			oldListOfNetwork = ListOfNetwork
+			old_list_network = list_network
 			for i in range(len(result)):
-				MESSAGE += f"{STATUS_DOT} *{result[i]}*: {STATUS_MESSAGE}!\n"
-				if STATUS_DOT == YELLOW_DOT: STATUS_MESSAGE = "created"
-			MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
-	
+				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
+				if status_dot == yellow_dot: status_message = "created"
+			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			SendMessage(f"{header_message}{message}")
+
 
 	#docker-container
-	STOPPED = False
-	STATUS_DOT = ORANGE_DOT
-	MESSAGE, HEADER_MESSAGE = "", f"*{HOSTNAME}* (docker.containers)\n"
-	global oldListOfContainer
-	ListOfContainer = result = []
+	stopped = False
+	status_dot = orange_dot
+	message, header_message = "", f"*{hostname}* (docker.containers)\n"
+	global old_list_container
+	list_container = result = []
 	containername, containerattr, containerstatus = "", "", "inactive"
-	ListOfContainer = getContainers()
-	if ListOfContainer:
-		if len(oldListOfContainer) == 0: oldListOfContainer = ListOfContainer
-		if len(ListOfContainer) >= len(oldListOfContainer):
-			result = list(set(ListOfContainer) - set(oldListOfContainer)) 
+	list_container = getContainers()
+	if list_container:
+		if len(old_list_container) == 0: old_list_container = list_container
+		if len(list_container) >= len(old_list_container):
+			result = list(set(list_container) - set(old_list_container)) 
 		else:
-			result = list(set(oldListOfContainer) - set(ListOfContainer))
-			STOPPED = True
+			result = list(set(old_list_container) - set(list_container))
+			stopped = True
 		if result:
-			oldListOfContainer = ListOfContainer
+			old_list_container = list_container
 			for i in range(len(result)):
 				containername = "".join(result[i]).split()[0]
 				if containername != "":
 					containerattr = "".join(result[i]).split()[2]
-					if not STOPPED: containerstatus = "".join(result[i]).split()[1]
-					if containerstatus == "running":
-						STATUS_DOT = GREEN_DOT
-						if containerattr != containerstatus and containerattr != "starting": containerstatus = f"{containerstatus} ({containerattr})"
-						if containerattr == "unhealthy": STATUS_DOT = ORANGE_DOT
-					elif containerstatus == "inactive": STATUS_DOT = RED_DOT
-					MESSAGE += f"{STATUS_DOT} *{containername}*: {containerstatus}!\n"
-			MESSAGE = "\n".join(sorted(MESSAGE.split("\n"))).lstrip("\n")
-			send_message(f"{HEADER_MESSAGE}{MESSAGE}")
+					if containerattr != "starting":
+						if not stopped: containerstatus = "".join(result[i]).split()[1]
+						if containerstatus == "running":
+							status_dot = green_dot
+							if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
+							if containerattr == "unhealthy": status_dot = orange_dot
+						elif containerstatus == "inactive": status_dot = red_dot
+						message += f"{status_dot} *{containername}*: {containerstatus}!\n"
+			if len(message) != 0:			
+				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				SendMessage(f"{header_message}{message}")
 
 
 while True:
-    run_pending()
-    time.sleep(1)
+	run_pending()
+	time.sleep(1)
