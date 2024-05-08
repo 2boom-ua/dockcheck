@@ -197,20 +197,20 @@ def docker_checker():
 	status_dot = green_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
 	global old_list_volume
-	ListOfVolume = result = []
-	ListOfVolume = getDockerData("volume")
-	if ListOfVolume:
-		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
-		if len(ListOfVolume) >= len(old_list_volume):
-			result = list(set(ListOfVolume) - set(old_list_volume))
+	list_volume = result = []
+	list_volume = getDockerData("volume")
+	if list_volume:
+		if len(old_list_volume) == 0: old_list_volume = list_volume
+		if len(list_volume) >= len(old_list_volume):
+			result = list(set(list_volume) - set(old_list_volume))
 			status_dot = yellow_dot
 			status_message = "created"
 		else:
-			result = list(set(old_list_volume) - set(ListOfVolume))
+			result = list(set(old_list_volume) - set(list_volume))
 			status_dot = red_dot
 			status_message = "removed"
 		if result:
-			old_list_volume = ListOfVolume
+			old_list_volume = list_volume
 			for i in range(len(result)):
 				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "created"
