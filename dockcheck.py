@@ -8,6 +8,7 @@ import os
 import time
 import requests
 from schedule import every, repeat, run_pending
+from requests.exceptions import RequestException
 
 
 def getHostname():
@@ -22,81 +23,89 @@ def getDockerCounts():
 	docker_counts = {"volumes": "0", "images": "0", "networks": "0", "containers": "0"}
 	try:
 		docker_client = docker.from_env()
-		if docker_client:
-			docker_counts["volumes"] = str(len(docker_client.volumes.list()))
-			docker_counts["images"] = str(len(docker_client.images.list()))
-			docker_counts["networks"] = str(len(docker_client.networks.list()))
-			docker_counts["containers"] = str(len(docker_client.containers.list()))
+		docker_counts["volumes"] = str(len(docker_client.volumes.list()))
+		docker_counts["images"] = str(len(docker_client.images.list()))
+		docker_counts["networks"] = str(len(docker_client.networks.list()))
+		docker_counts["containers"] = str(len(docker_client.containers.list()))
 	except docker.errors.DockerException as e:
-		print(f"Error connecting to Docker daemon: {e}")
+		print("error:", e)
 	return docker_counts
 
 
-def getDockerInfo(typeinfo : str):
+def getDockerData(what):
 	returndata = []
 	try:
 		docker_client = docker.from_env()
-		if typeinfo == "networks":
+		if what == "network":
 			for network in docker_client.networks.list():
 				returndata.append(f"{network.name}")
-		elif typeinfo == "volumes":
-			for volume in docker_client.volumes.list():
-				returndata.append(f"{volume.short_id}")
-		elif typeinfo == "images":
+		elif what == "image":
 			for image in docker_client.images.list():
 				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
 				if imagename == '': imagename = image.short_id.split(':')[-1]
 				returndata.append(f"{image.short_id.split(':')[-1]} {imagename}")
 		else:
+			for volume in docker_client.volumes.list():
+				returndata.append(f"{volume.short_id}")
+	except docker.errors.DockerException as e:
+		print("error:", e)
+	return returndata
+
+
+def getContainers():
+	containers = []
+	try:
+		docker_client = docker.from_env()
+		if docker_client: 
 			for container in docker_client.containers.list(all=True):
 				container_info = docker_client.api.inspect_container(container.id)
 				if "State" in container_info and "Health" in container_info["State"]:
-					returndata.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
+					containers.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
 				else:
-					returndata.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
+					containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	except docker.errors.DockerException as e:
-		print(f"Error connecting to Docker daemon: {e}")
-	return returndata
-	
+		print("error:", e)
+	return containers
+
 
 def SendMessage(message : str):
 	message = message.replace("\t", "")
 	if telegram_on:
 		try:
-			requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
+			response = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 	if discord_on:
 		try:
-			requests.post(discord_web, json={"content": message.replace("*", "**")})
+			response = requests.post(discord_web, json={"content": message.replace("*", "**")})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 	if slack_on:
 		try:
-			requests.post(slack_web, json = {"text": message})
+			response = requests.post(slack_web, json = {"text": message})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
 	if gotify_on:
 		try:
-			requests.post(f"{gotify_web}/message?token={gotify_token}",\
+			response = requests.post(f"{gotify_web}/message?token={gotify_token}",\
 			json={'title': header, 'message': message, 'priority': 0})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 	if ntfy_on:
 		try:
-			requests.post(f"{ntfy_web}/{ntfy_sub}", data=message.encode(encoding='utf-8'), headers={"Title": header})
+			response = requests.post(f"{ntfy_web}/{ntfy_sub}", data=message.encode(encoding='utf-8'), headers={"Title": header})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 	if pushbullet_on:
 		try:
-			requests.post('https://api.pushbullet.com/v2/pushes',\
+			response = requests.post('https://api.pushbullet.com/v2/pushes',\
 			json={'type': 'note', 'title': header, 'body': message},\
 			headers={'Access-Token': pushbullet_api, 'Content-Type': 'application/json'})
 		except requests.exceptions.RequestException as e:
-			print(f"An error occurred: {e}")
+			print("error:", e)
 
 
 if __name__ == "__main__":
@@ -157,7 +166,7 @@ def docker_checker():
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
 	list_image = result = []
 	imagename = imageid = ""
-	list_image = getDockerInfo("images")
+	list_image = getDockerData("image")
 	if list_image:
 		if len(old_list_image) == 0: old_list_image = list_image
 		if len(list_image) >= len(old_list_image):
@@ -187,20 +196,20 @@ def docker_checker():
 	status_dot = green_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
 	global old_list_volume
-	list_volume = result = []
-	list_volume = getDockerInfo("volumes")
-	if list_volume:
-		if len(old_list_volume) == 0: old_list_volume = list_volume
-		if len(list_volume) >= len(old_list_volume):
-			result = list(set(list_volume) - set(old_list_volume))
+	ListOfVolume = result = []
+	ListOfVolume = getDockerData("volume")
+	if ListOfVolume:
+		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
+		if len(ListOfVolume) >= len(old_list_volume):
+			result = list(set(ListOfVolume) - set(old_list_volume))
 			status_dot = yellow_dot
 			status_message = "created"
 		else:
-			result = list(set(old_list_volume) - set(list_volume))
+			result = list(set(old_list_volume) - set(ListOfVolume))
 			status_dot = red_dot
 			status_message = "removed"
 		if result:
-			old_list_volume = list_volume
+			old_list_volume = ListOfVolume
 			for i in range(len(result)):
 				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "created"
@@ -213,7 +222,7 @@ def docker_checker():
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.networks)\n"
 	global old_list_network
 	list_network = result = []
-	list_network = getDockerInfo("networks")
+	list_network = getDockerData("network")
 	if list_network:
 		if len(old_list_network) == 0: old_list_network = list_network
 		if len(list_network) >= len(old_list_network):
@@ -240,7 +249,7 @@ def docker_checker():
 	global old_list_container
 	list_container = result = []
 	containername, containerattr, containerstatus = "", "", "inactive"
-	list_container = getDockerInfo("containers")
+	list_container = getContainers()
 	if list_container:
 		if len(old_list_container) == 0: old_list_container = list_container
 		if len(list_container) >= len(old_list_container):
