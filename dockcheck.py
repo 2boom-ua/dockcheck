@@ -33,23 +33,23 @@ def getDockerCounts():
 
 
 def getDockerData(what):
-	returndata = []
+	return_data = []
 	try:
 		docker_client = docker.from_env()
-		if what == "network":
+		if what == "networks":
 			for network in docker_client.networks.list():
-				returndata.append(f"{network.name}")
-		elif what == "image":
+				return_data.append(f"{network.name}")
+		elif what == "images":
 			for image in docker_client.images.list():
 				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
 				if imagename == '': imagename = image.short_id.split(':')[-1]
-				returndata.append(f"{image.short_id.split(':')[-1]} {imagename}")
+				return_data.append(f"{image.short_id.split(':')[-1]} {imagename}")
 		else:
 			for volume in docker_client.volumes.list():
-				returndata.append(f"{volume.short_id}")
+				return_data.append(f"{volume.short_id}")
 	except docker.errors.DockerException as e:
 		print("error:", e)
-	return returndata
+	return return_data
 
 
 def getContainers():
@@ -166,7 +166,7 @@ def docker_checker():
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
 	list_image = result = []
 	imagename = imageid = ""
-	list_image = getDockerData("image")
+	list_image = getDockerData("images")
 	if list_image:
 		if len(old_list_image) == 0: old_list_image = list_image
 		if len(list_image) >= len(old_list_image):
@@ -197,7 +197,7 @@ def docker_checker():
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
 	global old_list_volume
 	ListOfVolume = result = []
-	ListOfVolume = getDockerData("volume")
+	ListOfVolume = getDockerData("volumes")
 	if ListOfVolume:
 		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
 		if len(ListOfVolume) >= len(old_list_volume):
@@ -222,7 +222,7 @@ def docker_checker():
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.networks)\n"
 	global old_list_network
 	list_network = result = []
-	list_network = getDockerData("network")
+	list_network = getDockerData("networks")
 	if list_network:
 		if len(old_list_network) == 0: old_list_network = list_network
 		if len(list_network) >= len(old_list_network):
