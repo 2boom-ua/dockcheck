@@ -269,6 +269,7 @@ def docker_checker():
 							status_dot = green_dot
 							if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
 							if containerattr == "unhealthy": status_dot = orange_dot
+							if containerstatus == "created": status_dot = yellow_dot
 						elif containerstatus == "inactive": status_dot = red_dot
 						message += f"{status_dot} *{containername}*: {containerstatus}!\n"
 			if len(message) != 0:			
