@@ -172,7 +172,7 @@ def docker_checker():
 		if len(list_image) >= len(old_list_image):
 			result = list(set(list_image) - set(old_list_image))
 			status_dot = yellow_dot
-			status_message = "created"
+			status_message = "pulled"
 		else:
 			result = list(set(old_list_image) - set(list_image))
 			status_dot = red_dot
@@ -182,11 +182,14 @@ def docker_checker():
 				imagename = result[i].split()[-1]
 				imageid = result[i].split()[0]
 				if imageid == imagename:
-					if imageid in ",".join(old_list_image) and status_dot != red_dot: status_message = "stored"
+					if imageid in ",".join(old_list_image) and status_dot != red_dot:
+						status_message = "unused"
+						status_dot = orange_dot
 					message += f"{status_dot} *{imagename}*: {status_message}!\n"
+					if status_dot == orange_dot: status_dot = yellow_dot
 				else:
 					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
-				if status_dot == yellow_dot: status_message = "created"
+				if status_dot == yellow_dot: status_message = "pulled"
 			old_list_image = list_image
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 			SendMessage(f"{header_message}{message}")
