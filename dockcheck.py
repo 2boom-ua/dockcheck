@@ -162,7 +162,7 @@ def docker_checker():
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	#docker-image
 	global old_list_image
-	status_dot = green_dot
+	status_dot = yellow_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
 	list_image = result = []
 	imagename = imageid = ""
@@ -171,7 +171,6 @@ def docker_checker():
 		if len(old_list_image) == 0: old_list_image = list_image
 		if len(list_image) >= len(old_list_image):
 			result = list(set(list_image) - set(old_list_image))
-			status_dot = yellow_dot
 			status_message = "pulled"
 		else:
 			result = list(set(old_list_image) - set(list_image))
@@ -196,7 +195,7 @@ def docker_checker():
 
 
 	#docker-volume
-	status_dot = green_dot
+	status_dot = yellow_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
 	global old_list_volume
 	ListOfVolume = result = []
@@ -205,7 +204,6 @@ def docker_checker():
 		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
 		if len(ListOfVolume) >= len(old_list_volume):
 			result = list(set(ListOfVolume) - set(old_list_volume))
-			status_dot = yellow_dot
 			status_message = "created"
 		else:
 			result = list(set(old_list_volume) - set(ListOfVolume))
@@ -221,7 +219,7 @@ def docker_checker():
 
 
 	#docker-network
-	status_dot = green_dot
+	status_dot = yellow_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.networks)\n"
 	global old_list_network
 	list_network = result = []
@@ -230,7 +228,6 @@ def docker_checker():
 		if len(old_list_network) == 0: old_list_network = list_network
 		if len(list_network) >= len(old_list_network):
 			result = list(set(list_network) - set(old_list_network))
-			status_dot = yellow_dot
 			status_message = "created"
 		else:
 			result = list(set(old_list_network) - set(list_network))
