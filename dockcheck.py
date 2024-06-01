@@ -177,9 +177,9 @@ def docker_checker():
 			status_dot = red_dot
 			status_message = "removed"
 		if result:
-			for i in range(len(result)):
-				imagename = result[i].split()[-1]
-				imageid = result[i].split()[0]
+			for image in result:
+				imageid = image.split()[0]
+				imagename = image.split()[-1]
 				if imageid == imagename:
 					if imageid in ",".join(old_list_image) and status_dot != red_dot:
 						status_message = "unused"
@@ -211,8 +211,8 @@ def docker_checker():
 			status_message = "removed"
 		if result:
 			old_list_volume = ListOfVolume
-			for i in range(len(result)):
-				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
+			for volume in result:
+				message += f"{status_dot} *{volume}*: {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "created"
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 			SendMessage(f"{header_message}{message}")
@@ -235,8 +235,8 @@ def docker_checker():
 			status_message = "removed"
 		if result:
 			old_list_network = list_network
-			for i in range(len(result)):
-				message += f"{status_dot} *{result[i]}*: {status_message}!\n"
+			for network in result:
+				message += f"{status_dot} *{network}*: {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "created"
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 			SendMessage(f"{header_message}{message}")
@@ -259,12 +259,12 @@ def docker_checker():
 			stopped = True
 		if result:
 			old_list_container = list_container
-			for i in range(len(result)):
-				containername = "".join(result[i]).split()[0]
+			for container in result:
+				containername = "".join(container).split()[0]
 				if containername != "":
-					containerattr = "".join(result[i]).split()[2]
+					containerattr = "".join(container).split()[2]
 					if containerattr != "starting":
-						if not stopped: containerstatus = "".join(result[i]).split()[1]
+						if not stopped: containerstatus = "".join(container).split()[1]
 						if containerstatus == "running":
 							status_dot = green_dot
 							if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
