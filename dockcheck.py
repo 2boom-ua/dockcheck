@@ -194,52 +194,39 @@ def docker_checker():
 			SendMessage(f"{header_message}{message}")
 
 
-	#docker-volume
-	status_dot = yellow_dot
-	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
-	global old_list_volume
-	ListOfVolume = result = []
-	ListOfVolume = getDockerData("volumes")
-	if ListOfVolume:
-		if len(old_list_volume) == 0: old_list_volume = ListOfVolume
-		if len(ListOfVolume) >= len(old_list_volume):
-			result = list(set(ListOfVolume) - set(old_list_volume))
-			status_message = "created"
-		else:
-			result = list(set(old_list_volume) - set(ListOfVolume))
-			status_dot = red_dot
-			status_message = "removed"
-		if result:
-			old_list_volume = ListOfVolume
-			for volume in result:
-				message += f"{status_dot} *{volume}*: {status_message}!\n"
-				if status_dot == yellow_dot: status_message = "created"
-			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
-			SendMessage(f"{header_message}{message}")
-
-
-	#docker-network
-	status_dot = yellow_dot
-	message, status_message, header_message = "", "", f"*{hostname}* (docker.networks)\n"
+	#docker-volume-network
+	check_types = ["volumes", "networks"]
 	global old_list_network
-	list_network = result = []
-	list_network = getDockerData("networks")
-	if list_network:
-		if len(old_list_network) == 0: old_list_network = list_network
-		if len(list_network) >= len(old_list_network):
-			result = list(set(list_network) - set(old_list_network))
-			status_message = "created"
+	global old_list_volume
+	for check_type in check_types:
+		status_dot = yellow_dot
+		message, status_message, header_message = "", "", f"*{hostname}* (docker.{check_type})\n"
+		list_of = old_list = result = []
+		if check_type == "volumes":
+			old_list = old_list_volume
+			list_of = getDockerData("volumes")
 		else:
-			result = list(set(old_list_network) - set(list_network))
-			status_dot = red_dot
-			status_message = "removed"
-		if result:
-			old_list_network = list_network
-			for network in result:
-				message += f"{status_dot} *{network}*: {status_message}!\n"
-				if status_dot == yellow_dot: status_message = "created"
-			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
-			SendMessage(f"{header_message}{message}")
+			old_list = old_list_network
+			list_of = getDockerData("networks")
+		if list_of:
+			if len(old_list) == 0: old_list = list_of
+			if len(list_of) >= len(old_list):
+				result = list(set(list_of) - set(old_list))
+				status_message = "created"
+			else:
+				result = list(set(old_list) - set(list_of))
+				status_dot = red_dot
+				status_message = "removed"
+			if check_type == "volumes":
+				old_list_volume = list_of
+			else:
+				old_list_network = list_of
+			if result:
+				for item in result:
+					message += f"{status_dot} *{item}*: {status_message}!\n"
+					if status_dot == yellow_dot: status_message = "created"
+				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				SendMessage(f"{header_message}{message}")
 
 
 	#docker-container
