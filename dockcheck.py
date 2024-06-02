@@ -168,7 +168,7 @@ def docker_checker():
 	imagename = imageid = ""
 	list_image = getDockerData("images")
 	if list_image:
-		if len(old_list_image) == 0: old_list_image = list_image
+		if not old_list_image: old_list_image = list_image
 		if len(list_image) >= len(old_list_image):
 			result = list(set(list_image) - set(old_list_image))
 			status_message = "pulled"
@@ -209,7 +209,7 @@ def docker_checker():
 			old_list = old_list_network
 			list_of = getDockerData("networks")
 		if list_of:
-			if len(old_list) == 0: old_list = list_of
+			if not old_list: old_list = list_of
 			if len(list_of) >= len(old_list):
 				result = list(set(list_of) - set(old_list))
 				status_message = "created"
@@ -224,7 +224,6 @@ def docker_checker():
 			if result:
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n"
-					if status_dot == yellow_dot: status_message = "created"
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 				SendMessage(f"{header_message}{message}")
 
@@ -238,7 +237,7 @@ def docker_checker():
 	containername, containerattr, containerstatus = "", "", "inactive"
 	list_container = getContainers()
 	if list_container:
-		if len(old_list_container) == 0: old_list_container = list_container
+		if not old_list_container: old_list_container = list_container
 		if len(list_container) >= len(old_list_container):
 			result = list(set(list_container) - set(old_list_container)) 
 		else:
