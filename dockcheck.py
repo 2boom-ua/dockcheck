@@ -259,7 +259,7 @@ def docker_checker():
 						elif containerstatus == "inactive": status_dot = red_dot
 						message += f"{status_dot} *{containername}*: {containerstatus}!\n"
 			if message:
-				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")  
 				SendMessage(f"{header_message}{message}")
 
 
