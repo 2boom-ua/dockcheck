@@ -37,16 +37,16 @@ def getDockerData(what):
 	try:
 		docker_client = docker.from_env()
 		if what == "networks":
-			for network in docker_client.networks.list():
-				return_data.append(f"{network.name}")
+			return_data = [network.name for network in docker_client.networks.list()]
 		elif what == "images":
 			for image in docker_client.images.list():
 				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
 				if imagename == '': imagename = image.short_id.split(':')[-1]
 				return_data.append(f"{image.short_id.split(':')[-1]} {imagename}")
+		elif what == "unused_volumes":
+			return_data = [volume.short_id for volume in docker_client.volumes.list(filters={"dangling": "true"})]
 		else:
-			for volume in docker_client.volumes.list():
-				return_data.append(f"{volume.short_id}")
+			return_data = [volume.short_id for volume in docker_client.volumes.list()]
 	except docker.errors.DockerException as e:
 		print("error:", e)
 	return return_data
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 	hostname = getHostname()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	sec_repeat = 20
-	old_list_container = old_list_network = old_list_volume = old_list_image = []
+	old_list_container = old_list_network = old_list_volume = old_list_image = old_list_uvolume = []
 	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
 	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = messaging_service = ""
 	docker_counts = getDockerCounts()
@@ -190,6 +190,25 @@ def docker_checker():
 					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "pulled"
 			old_list_image = list_image
+			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			SendMessage(f"{header_message}{message}")
+
+
+	#docker-unused.volumes
+	global old_list_uvolume
+	status_dot = orange_dot
+	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
+	list_of = old_list = result = []
+	old_list = old_list_uvolume
+	list_of = getDockerData("unused_volumes")
+	if list_of:
+		if len(list_of) >= len(old_list):
+			result = list(set(list_of) - set(old_list))
+			status_message = "unused"
+		old_list_uvolume = list_of
+		if result:
+			for item in result:
+				message += f"{status_dot} *{item}*: {status_message}!\n"
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 			SendMessage(f"{header_message}{message}")
 
