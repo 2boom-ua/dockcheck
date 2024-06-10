@@ -37,16 +37,21 @@ def getDockerData(what):
 	try:
 		docker_client = docker.from_env()
 		if what == "networks":
-			return_data = [network.name for network in docker_client.networks.list()]
+			networks = docker_client.networks.list()
+			if networks: return_data = [network.name for network in networks]
 		elif what == "images":
-			for image in docker_client.images.list():
-				imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-				if imagename == '': imagename = image.short_id.split(':')[-1]
-				return_data.append(f"{image.short_id.split(':')[-1]} {imagename}")
+			images = docker_client.images.list()
+			if images:
+				for image in images:
+					imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
+					if imagename == '': imagename = image.short_id.split(':')[-1]
+					return_data.append(f"{image.short_id.split(':')[-1]} {imagename}")
 		elif what == "unused_volumes":
-			return_data = [volume.short_id for volume in docker_client.volumes.list(filters={"dangling": "true"})]
+			volumes = docker_client.volumes.list(filters={"dangling": "true"})
+			if volumes: return_data = [volume.short_id for volume in volumes]
 		else:
-			return_data = [volume.short_id for volume in docker_client.volumes.list()]
+			volumes = docker_client.volumes.list()
+			if volumes: return_data = [volume.short_id for volume in volumes]
 	except docker.errors.DockerException as e:
 		print("error:", e)
 	return return_data
@@ -248,11 +253,11 @@ def docker_checker():
 
 
 	#docker-container
-	stopped = False
+	global old_list_container
 	status_dot = orange_dot
 	message, header_message = "", f"*{hostname}* (docker.containers)\n"
-	global old_list_container
 	list_container = result = []
+	stopped = False
 	containername, containerattr, containerstatus = "", "", "inactive"
 	list_container = getContainers()
 	if list_container:
