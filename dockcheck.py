@@ -117,7 +117,7 @@ if __name__ == "__main__":
 	hostname = getHostname()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	sec_repeat = 20
-	old_list_container = old_list_network = old_list_volume = old_list_image = old_list_uvolume = []
+	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
 	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
 	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = messaging_service = ""
 	docker_counts = getDockerCounts()
@@ -166,51 +166,54 @@ if __name__ == "__main__":
 def docker_checker():
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	#docker-image
-	global old_list_image
+	global old_list_images
 	status_dot = yellow_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
-	list_image = result = []
+	list_images = result = []
 	imagename = imageid = ""
-	list_image = getDockerData("images")
-	if list_image:
-		if not old_list_image: old_list_image = list_image
-		if len(list_image) >= len(old_list_image):
-			result = list(set(list_image) - set(old_list_image))
+	list_images = getDockerData("images")
+	if list_images:
+		if not old_list_images: old_list_images = list_images
+		if len(list_images) >= len(old_list_images):
+			result = list(set(list_images) - set(old_list_images))
 			status_message = "pulled"
 		else:
-			result = list(set(old_list_image) - set(list_image))
+			result = list(set(old_list_images) - set(list_images))
 			status_dot = red_dot
 			status_message = "removed"
 		if result:
 			for image in result:
-				imageid = image.split()[0]
-				imagename = image.split()[-1]
+				imageid, imagename = image.split()[0], image.split()[-1]
 				if imageid == imagename:
-					if imageid in ",".join(old_list_image) and status_dot != red_dot:
-						status_message = "unused"
-						status_dot = orange_dot
+					if imageid in ",".join(old_list_images) and status_dot != red_dot:
+						status_message, status_dot = "unused", orange_dot
 					message += f"{status_dot} *{imagename}*: {status_message}!\n"
 					if status_dot == orange_dot: status_dot = yellow_dot
 				else:
 					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "pulled"
-			old_list_image = list_image
+			old_list_images = list_images
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]):
+				parts_ms = message.split()
+				unused_id, name_im = parts_ms[1].rstrip(':').strip('*'), parts_ms[4]
+				replace_name = f"{name_im} ({unused_id}):"
+				message = message.replace(parts_ms[1], replace_name)
 			SendMessage(f"{header_message}{message}")
 
 
 	#docker-unused.volumes
-	global old_list_uvolume
+	global old_list_uvolumes
 	status_dot = orange_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
 	list_of = old_list = result = []
-	old_list = old_list_uvolume
+	old_list = old_list_uvolumes
 	list_of = getDockerData("unused_volumes")
 	if list_of:
 		if len(list_of) >= len(old_list):
 			result = list(set(list_of) - set(old_list))
 			status_message = "unused"
-		old_list_uvolume = list_of
+		old_list_uvolumes = list_of
 		if result:
 			for item in result:
 				message += f"{status_dot} *{item}*: {status_message}!\n"
@@ -220,17 +223,17 @@ def docker_checker():
 
 	#docker-volume-network
 	check_types = ["volumes", "networks"]
-	global old_list_network
-	global old_list_volume
+	global old_list_networks
+	global old_list_volumes
 	for check_type in check_types:
 		status_dot = yellow_dot
 		message, status_message, header_message = "", "", f"*{hostname}* (docker.{check_type})\n"
 		list_of = old_list = result = []
 		if check_type == "volumes":
-			old_list = old_list_volume
+			old_list = old_list_volumes
 			list_of = getDockerData("volumes")
 		else:
-			old_list = old_list_network
+			old_list = old_list_networks
 			list_of = getDockerData("networks")
 		if list_of:
 			if not old_list: old_list = list_of
@@ -242,9 +245,9 @@ def docker_checker():
 				status_dot = red_dot
 				status_message = "removed"
 			if check_type == "volumes":
-				old_list_volume = list_of
+				old_list_volumes = list_of
 			else:
-				old_list_network = list_of
+				old_list_networks = list_of
 			if result:
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n"
@@ -253,22 +256,22 @@ def docker_checker():
 
 
 	#docker-container
-	global old_list_container
+	global old_list_containers
 	status_dot = orange_dot
 	message, header_message = "", f"*{hostname}* (docker.containers)\n"
-	list_container = result = []
+	list_containers = result = []
 	stopped = False
 	containername, containerattr, containerstatus = "", "", "inactive"
-	list_container = getContainers()
-	if list_container:
-		if not old_list_container: old_list_container = list_container
-		if len(list_container) >= len(old_list_container):
-			result = list(set(list_container) - set(old_list_container)) 
+	list_containers = getContainers()
+	if list_containers:
+		if not old_list_containers: old_list_containers = list_containers
+		if len(list_containers) >= len(old_list_containers):
+			result = list(set(list_containers) - set(old_list_containers)) 
 		else:
-			result = list(set(old_list_container) - set(list_container))
+			result = list(set(old_list_containers) - set(list_containers))
 			stopped = True
 		if result:
-			old_list_container = list_container
+			old_list_containers = list_containers
 			for container in result:
 				containername = "".join(container).split()[0]
 				if containername != "":
