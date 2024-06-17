@@ -73,8 +73,7 @@ def getContainers():
 	return containers
 
 
-def SendMessage(message : str):
-	message = message.replace("\t", "")
+def sendMessage(message : str):
 	if telegram_on:
 		try:
 			response = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
@@ -119,8 +118,9 @@ if __name__ == "__main__":
 	sec_repeat = 20
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
 	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
-	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = messaging_service = ""
+	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = monitoring_mg = ""
 	docker_counts = getDockerCounts()
+	header_message = f"*{hostname}* (docker.check)\ndocker monitor:\n"
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
@@ -134,30 +134,27 @@ if __name__ == "__main__":
 		if telegram_on:
 			token = parsed_json["TELEGRAM"]["TOKEN"]
 			chat_id = parsed_json["TELEGRAM"]["CHAT_ID"]
-			messaging_service += "- messenging: Telegram,\n"
+			monitoring_mg += "- messenging: Telegram,\n"
 		if discord_on:
 			discord_web = parsed_json["DISCORD"]["WEB"]
-			messaging_service += "- messenging: Discord,\n"
+			monitoring_mg += "- messenging: Discord,\n"
 		if gotify_on:
 			gotify_web = parsed_json["GOTIFY"]["WEB"]
 			gotify_token = parsed_json["GOTIFY"]["TOKEN"]
-			messaging_service += "- messenging: Gotify,\n"
+			monitoring_mg += "- messenging: Gotify,\n"
 		if ntfy_on:
 			ntfy_web = parsed_json["NTFY"]["WEB"]
 			ntfy_sub = parsed_json["NTFY"]["SUB"]
-			messaging_service += "- messenging: Ntfy,\n"
+			monitoring_mg += "- messenging: Ntfy,\n"
 		if pushbullet_on:
 			pushbullet_api = parsed_json["PUSHBULLET"]["API"]
-			messaging_service += "- messenging: Pushbullet,\n"
+			monitoring_mg += "- messenging: Pushbullet,\n"
 		if slack_on:
 			slack_web = parsed_json["SLACK"]["WEB"]
-			messaging_service += "- messenging: Slack,\n"
-		SendMessage(f"*{hostname}* (docker.check)\ndocker monitor:\n{messaging_service}\
-		- monitoring: {docker_counts['containers']} containers,\n\
-		- monitoring: {docker_counts['images']} images,\n\
-		- monitoring: {docker_counts['networks']} networks,\n\
-		- monitoring: {docker_counts['volumes']} volumes,\n\
-		- polling period: {sec_repeat} seconds.")
+			monitoring_mg += "- messenging: Slack,\n"
+		for dpart in docker_counts:
+			monitoring_mg += f"- monitoring: {docker_counts[dpart]} {dpart}\n"
+		sendMessage(f"{header_message}{monitoring_mg}- polling period: {sec_repeat} seconds.")
 	else:
 		print("config.json not found")
 
@@ -199,7 +196,7 @@ def docker_checker():
 				unused_id, name_im = parts_ms[1].rstrip(':').strip('*'), parts_ms[4]
 				replace_name = f"{name_im} ({unused_id}):"
 				message = message.replace(parts_ms[1], replace_name)
-			SendMessage(f"{header_message}{message}")
+			sendMessage(f"{header_message}{message}")
 
 
 	#docker-unused.volumes
@@ -218,7 +215,7 @@ def docker_checker():
 			for item in result:
 				message += f"{status_dot} *{item}*: {status_message}!\n"
 			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
-			SendMessage(f"{header_message}{message}")
+			sendMessage(f"{header_message}{message}")
 
 
 	#docker-volume-network
@@ -252,7 +249,7 @@ def docker_checker():
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n"
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
-				SendMessage(f"{header_message}{message}")
+				sendMessage(f"{header_message}{message}")
 
 
 	#docker-container
@@ -288,7 +285,7 @@ def docker_checker():
 				status_dot = orange_dot
 			if message:
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")  
-				SendMessage(f"{header_message}{message}")
+				sendMessage(f"{header_message}{message}")
 
 
 while True:
