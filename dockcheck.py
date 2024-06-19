@@ -8,7 +8,6 @@ import os
 import time
 import requests
 from schedule import every, repeat, run_pending
-from requests.exceptions import RequestException
 
 
 def getHostname():
@@ -28,7 +27,7 @@ def getDockerCounts():
 		docker_counts["networks"] = str(len(docker_client.networks.list()))
 		docker_counts["containers"] = str(len(docker_client.containers.list()))
 	except docker.errors.DockerException as e:
-		print("error:", e)
+		print("Error:", e)
 	return docker_counts
 
 
@@ -46,14 +45,14 @@ def getDockerData(what):
 					imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
 					if imagename == '': imagename = image.short_id.split(':')[-1]
 					return_data.append(f"{image.short_id.split(':')[-1]} {imagename}")
-		elif what == "unused_volumes":
-			volumes = docker_client.volumes.list(filters={"dangling": "true"})
-			if volumes: return_data = [volume.short_id for volume in volumes]
 		else:
-			volumes = docker_client.volumes.list()
+			if what == "volumes":
+				volumes = docker_client.volumes.list()
+			else:
+				volumes = docker_client.volumes.list(filters={"dangling": "true"})
 			if volumes: return_data = [volume.short_id for volume in volumes]
 	except docker.errors.DockerException as e:
-		print("error:", e)
+		print("Error:", e)
 	return return_data
 
 
@@ -69,7 +68,7 @@ def getContainers():
 				else:
 					containers.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 	except docker.errors.DockerException as e:
-		print("error:", e)
+		print("Error:", e)
 	return containers
 
 
@@ -78,17 +77,17 @@ def sendMessage(message : str):
 		try:
 			response = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 	if discord_on:
 		try:
 			response = requests.post(discord_web, json={"content": message.replace("*", "**")})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 	if slack_on:
 		try:
 			response = requests.post(slack_web, json = {"text": message})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 	message = message.replace("*", "")
 	header = message[:message.index("\n")].rstrip("\n")
 	message = message[message.index("\n"):].strip("\n")
@@ -97,25 +96,26 @@ def sendMessage(message : str):
 			response = requests.post(f"{gotify_web}/message?token={gotify_token}",\
 			json={'title': header, 'message': message, 'priority': 0})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 	if ntfy_on:
 		try:
 			response = requests.post(f"{ntfy_web}/{ntfy_sub}", data=message.encode(encoding='utf-8'), headers={"Title": header})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 	if pushbullet_on:
 		try:
 			response = requests.post('https://api.pushbullet.com/v2/pushes',\
 			json={'type': 'note', 'title': header, 'body': message},\
 			headers={'Access-Token': pushbullet_api, 'Content-Type': 'application/json'})
 		except requests.exceptions.RequestException as e:
-			print("error:", e)
+			print("Error:", e)
 
 
 if __name__ == "__main__":
 	hostname = getHostname()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	sec_repeat = 20
+	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
 	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
 	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = monitoring_mg = ""
@@ -160,14 +160,12 @@ if __name__ == "__main__":
 
 
 @repeat(every(sec_repeat).seconds)
-def docker_checker():
-	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
+def dockerСhecker():
 	#docker-image
 	global old_list_images
 	status_dot = yellow_dot
 	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
 	list_images = result = []
-	imagename = imageid = ""
 	list_images = getDockerData("images")
 	if list_images:
 		if not old_list_images: old_list_images = list_images
