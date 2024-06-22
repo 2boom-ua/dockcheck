@@ -114,11 +114,9 @@ def sendMessage(message : str):
 if __name__ == "__main__":
 	hostname = getHostname()
 	current_path = os.path.dirname(os.path.realpath(__file__))
-	sec_repeat = 20
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
-	telegram_on = discord_on = gotify_on = ntfy_on = slack_on = pushbullet_on = False
-	token = chat_id = discord_web = gotify_web = gotify_token = ntfy_web = ntfy_sub = pushbullet_api = slack_web = monitoring_mg = ""
+	monitoring_mg = ""
 	docker_counts = getDockerCounts()
 	header_message = f"*{hostname}* (docker.check)\ndocker monitor:\n"
 	if os.path.exists(f"{current_path}/config.json"):
@@ -164,7 +162,7 @@ def dockerСhecker():
 	#docker-image
 	global old_list_images
 	status_dot = yellow_dot
-	message, status_message, header_message = "", "", f"*{hostname}* (docker.images)\n"
+	message, header_message = "", f"*{hostname}* (docker.images)\n"
 	list_images = result = []
 	list_images = getDockerData("images")
 	if list_images:
@@ -200,7 +198,7 @@ def dockerСhecker():
 	#docker-unused.volumes
 	global old_list_uvolumes
 	status_dot = orange_dot
-	message, status_message, header_message = "", "", f"*{hostname}* (docker.volumes)\n"
+	message, header_message = "", f"*{hostname}* (docker.volumes)\n"
 	list_of = old_list = result = []
 	old_list = old_list_uvolumes
 	list_of = getDockerData("unused_volumes")
@@ -222,7 +220,7 @@ def dockerСhecker():
 	global old_list_volumes
 	for check_type in check_types:
 		status_dot = yellow_dot
-		message, status_message, header_message = "", "", f"*{hostname}* (docker.{check_type})\n"
+		message, header_message = "", f"*{hostname}* (docker.{check_type})\n"
 		list_of = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_volumes
