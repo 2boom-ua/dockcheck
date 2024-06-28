@@ -75,17 +75,20 @@ def getContainers():
 def sendMessage(message : str):
 	if telegram_on:
 		try:
-			response = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"})
+			for telegram_token, telegram_chat_id in zip(telegram_tokens, telegram_chat_ids):
+				requests.post(f"https://api.telegram.org/bot{telegram_token}/sendMessage", json = {"chat_id": telegram_chat_id, "text": message, "parse_mode": "Markdown"})
 		except requests.exceptions.RequestException as e:
-			print("Error:", e)
+			print("error:", e)
 	if discord_on:
 		try:
-			response = requests.post(discord_web, json={"content": message.replace("*", "**")})
+			for discord_token in discord_tokens:
+				requests.post(f"https://discord.com/api/webhooks/{discord_token}", json = {"content": message.replace("*", "**")})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	if slack_on:
 		try:
-			response = requests.post(slack_web, json = {"text": message})
+			for slack_token in slack_tokens:
+				requests.post(f"https://hooks.slack.com/services/{slack_token}", json = {"text": message})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	message = message.replace("*", "")
@@ -93,20 +96,23 @@ def sendMessage(message : str):
 	message = message[message.index("\n"):].strip("\n")
 	if gotify_on:
 		try:
-			response = requests.post(f"{gotify_web}/message?token={gotify_token}",\
-			json={'title': header, 'message': message, 'priority': 0})
+			for gotify_chat_web, gotify_token in zip(gotify_chat_webs, gotify_tokens):
+				requests.post(f"{gotify_chat_web}/message?token={gotify_token}",\
+				json={'title': header, 'message': message, 'priority': 0})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	if ntfy_on:
 		try:
-			response = requests.post(f"{ntfy_web}/{ntfy_sub}", data=message.encode(encoding='utf-8'), headers={"Title": header})
+			for ntfy_chat_web, ntfy_token in zip(ntfy_chat_webs, ntfy_tokens):
+				requests.post(f"{ntfy_chat_web}/{ntfy_token}", data = message.encode(encoding = 'utf-8'), headers = {"title": header})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	if pushbullet_on:
 		try:
-			response = requests.post('https://api.pushbullet.com/v2/pushes',\
-			json={'type': 'note', 'title': header, 'body': message},\
-			headers={'Access-Token': pushbullet_api, 'Content-Type': 'application/json'})
+			for pushbullet_token in pushbullet_tokens:
+				requests.post('https://api.pushbullet.com/v2/pushes',\
+				json = {'type': 'note', 'title': header, 'body': message},\
+				headers = {'Access-Token': pushbullet_token, 'Content-Type': 'application/json'})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 
@@ -130,28 +136,28 @@ if __name__ == "__main__":
 		pushbullet_on = parsed_json["PUSHBULLET"]["ON"]
 		slack_on = parsed_json["SLACK"]["ON"]
 		if telegram_on:
-			token = parsed_json["TELEGRAM"]["TOKEN"]
-			chat_id = parsed_json["TELEGRAM"]["CHAT_ID"]
+			telegram_tokens = parsed_json["TELEGRAM"]["TOKENS"]
+			telegram_chat_ids = parsed_json["TELEGRAM"]["CHAT_IDS"]
 			monitoring_mg += "- messenging: Telegram,\n"
 		if discord_on:
-			discord_web = parsed_json["DISCORD"]["WEB"]
+			discord_tokens = parsed_json["DISCORD"]["TOKENS"]
 			monitoring_mg += "- messenging: Discord,\n"
+		if slack_on:
+			slack_tokens = parsed_json["SLACK"]["TOKENS"]
+			monitoring_mg += "- messenging: Slack,\n"
 		if gotify_on:
-			gotify_web = parsed_json["GOTIFY"]["WEB"]
-			gotify_token = parsed_json["GOTIFY"]["TOKEN"]
+			gotify_tokens = parsed_json["GOTIFY"]["TOKENS"]
+			gotify_chat_webs = parsed_json["GOTIFY"]["CHAT_WEB"]
 			monitoring_mg += "- messenging: Gotify,\n"
 		if ntfy_on:
-			ntfy_web = parsed_json["NTFY"]["WEB"]
-			ntfy_sub = parsed_json["NTFY"]["SUB"]
+			ntfy_tokens = parsed_json["NTFY"]["TOKENS"]
+			ntfy_chat_webs = parsed_json["NTFY"]["CHAT_WEB"]
 			monitoring_mg += "- messenging: Ntfy,\n"
 		if pushbullet_on:
-			pushbullet_api = parsed_json["PUSHBULLET"]["API"]
+			pushbullet_tokens = parsed_json["PUSHBULLET"]["TOKENS"]
 			monitoring_mg += "- messenging: Pushbullet,\n"
-		if slack_on:
-			slack_web = parsed_json["SLACK"]["WEB"]
-			monitoring_mg += "- messenging: Slack,\n"
-		for dpart in docker_counts:
-			monitoring_mg += f"- monitoring: {docker_counts[dpart]} {dpart}\n"
+		for type_of in docker_counts:
+			monitoring_mg += f"- monitoring: {docker_counts[type_of]} {type_of}\n"
 		sendMessage(f"{header_message}{monitoring_mg}- polling period: {sec_repeat} seconds.")
 	else:
 		print("config.json not found")
