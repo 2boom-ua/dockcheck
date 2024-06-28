@@ -11,34 +11,70 @@ pip install -r requirements.txt
 **config.json**
 ```
 {
-	"TELEGRAM": {
-		"ON": true,
-		"TOKEN": "your_token",
-		"CHAT_ID": "your_chat_id"
-	},
-	"DISCORD": {
-		"ON": true,
-		"WEB": "web_hook_url"
-	},
-	"GOTIFY": {
-		"ON": true,
-		"TOKEN": "your_token",
-		"WEB": "server_url"
-	},
-	"NTFY": {
-		"ON": true,
-		"SUB": "your_subscribe",
-		"WEB": "server_url"
-	},
-	"PUSHBULLET": {
-		"ON": false,
-		"API": "your_api_key"
-	},
-	"SLACK": {
-		"ON": true,
-		"WEB": "web_hook_url"
-	},
-	"SEC_REPEAT": 10
+    "TELEGRAM": {
+        "ON": true,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "CHAT_IDS": [
+            "first chat_id",
+            "second chat_id",
+            "...."
+        ]
+    },
+    "DISCORD": {
+        "ON": false,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ]
+    },
+    "SLACK": {
+        "ON": false,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ]
+    },
+    "GOTIFY": {
+        "ON": false,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "CHAT_WEB": [
+            "first server_url",
+            "second server_url",
+            "...."
+        ]
+    },
+    "NTFY": {
+        "ON": true,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "CHAT_WEB": [
+            "first server_url",
+            "second server_url",
+            "...."
+        ]
+    },
+    "PUSHBULLET": {
+        "ON": false,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ]
+    },
+    "SEC_REPEAT": 10
 }
 ```
 **make as service**
