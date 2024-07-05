@@ -92,13 +92,11 @@ def sendMessage(message : str):
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	message = message.replace("*", "")
-	header = message[:message.index("\n")].rstrip("\n")
-	message = message[message.index("\n"):].strip("\n")
+	header, message = message[:message.index("\n")].rstrip("\n"), message[message.index("\n"):].strip("\n")
 	if gotify_on:
 		try:
 			for gotify_chat_web, gotify_token in zip(gotify_chat_webs, gotify_tokens):
-				requests.post(f"{gotify_chat_web}/message?token={gotify_token}",\
-				json={'title': header, 'message': message, 'priority': 0})
+				requests.post(f"{gotify_chat_web}/message?token={gotify_token}", json={'title': header, 'message': message, 'priority': 0})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 	if ntfy_on:
@@ -111,8 +109,7 @@ def sendMessage(message : str):
 		try:
 			for pushbullet_token in pushbullet_tokens:
 				requests.post('https://api.pushbullet.com/v2/pushes',\
-				json = {'type': 'note', 'title': header, 'body': message},\
-				headers = {'Access-Token': pushbullet_token, 'Content-Type': 'application/json'})
+				json = {'type': 'note', 'title': header, 'body': message}, headers = {'Access-Token': pushbullet_token, 'Content-Type': 'application/json'})
 		except requests.exceptions.RequestException as e:
 			print("Error:", e)
 
@@ -129,15 +126,10 @@ if __name__ == "__main__":
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
 		sec_repeat = int(parsed_json["SEC_REPEAT"])
-		telegram_on = parsed_json["TELEGRAM"]["ON"]
-		discord_on = parsed_json["DISCORD"]["ON"]
-		gotify_on = parsed_json["GOTIFY"]["ON"]
-		ntfy_on = parsed_json["NTFY"]["ON"]
-		pushbullet_on = parsed_json["PUSHBULLET"]["ON"]
-		slack_on = parsed_json["SLACK"]["ON"]
+		telegram_on, discord_on, gotify_on = parsed_json["TELEGRAM"]["ON"], parsed_json["DISCORD"]["ON"], parsed_json["GOTIFY"]["ON"]
+		ntfy_on, pushbullet_on, slack_on = parsed_json["NTFY"]["ON"], parsed_json["PUSHBULLET"]["ON"], parsed_json["SLACK"]["ON"]
 		if telegram_on:
-			telegram_tokens = parsed_json["TELEGRAM"]["TOKENS"]
-			telegram_chat_ids = parsed_json["TELEGRAM"]["CHAT_IDS"]
+			telegram_tokens, telegram_chat_ids = parsed_json["TELEGRAM"]["TOKENS"], parsed_json["TELEGRAM"]["CHAT_IDS"]
 			monitoring_mg += "- messenging: Telegram,\n"
 		if discord_on:
 			discord_tokens = parsed_json["DISCORD"]["TOKENS"]
@@ -146,12 +138,10 @@ if __name__ == "__main__":
 			slack_tokens = parsed_json["SLACK"]["TOKENS"]
 			monitoring_mg += "- messenging: Slack,\n"
 		if gotify_on:
-			gotify_tokens = parsed_json["GOTIFY"]["TOKENS"]
-			gotify_chat_webs = parsed_json["GOTIFY"]["CHAT_WEB"]
+			gotify_tokens, gotify_chat_webs = parsed_json["GOTIFY"]["TOKENS"], parsed_json["GOTIFY"]["CHAT_WEB"]
 			monitoring_mg += "- messenging: Gotify,\n"
 		if ntfy_on:
-			ntfy_tokens = parsed_json["NTFY"]["TOKENS"]
-			ntfy_chat_webs = parsed_json["NTFY"]["CHAT_WEB"]
+			ntfy_tokens, ntfy_chat_webs = parsed_json["NTFY"]["TOKENS"], parsed_json["NTFY"]["CHAT_WEB"]
 			monitoring_mg += "- messenging: Ntfy,\n"
 		if pushbullet_on:
 			pushbullet_tokens = parsed_json["PUSHBULLET"]["TOKENS"]
