@@ -8,14 +8,17 @@ import os
 import time
 import requests
 from schedule import every, repeat, run_pending
+	
 
-
-def getHostname():
-	hostname = ""
-	if os.path.exists('/proc/sys/kernel/hostname'):
-		with open('/proc/sys/kernel/hostname', "r") as file:
-			hostname = file.read().strip('\n')
-	return hostname
+def getNodeName():
+	node_name = ""
+	try:
+		docker_client = docker.from_env()
+		info = docker_client.info()
+		node_name = info.get('Name')
+	except docker.errors.DockerException as e:
+		print("Error:", e)
+	return node_name
 
 
 def getDockerCounts():
@@ -115,13 +118,13 @@ def sendMessage(message : str):
 
 
 if __name__ == "__main__":
-	hostname = getHostname()
+	nodename = getNodeName()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
 	monitoring_mg = ""
 	docker_counts = getDockerCounts()
-	header_message = f"*{hostname}* (docker.check)\ndocker monitor:\n"
+	header_message = f"*{nodename}* (docker.check)\ndocker monitor:\n"
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
@@ -158,7 +161,7 @@ def dockerСhecker():
 	#docker-image
 	global old_list_images
 	status_dot = yellow_dot
-	message, header_message = "", f"*{hostname}* (docker.images)\n"
+	message, header_message = "", f"*{nodename}* (docker.images)\n"
 	list_images = result = []
 	list_images = getDockerData("images")
 	if list_images:
@@ -194,7 +197,7 @@ def dockerСhecker():
 	#docker-unused.volumes
 	global old_list_uvolumes
 	status_dot = orange_dot
-	message, header_message = "", f"*{hostname}* (docker.volumes)\n"
+	message, header_message = "", f"*{nodename}* (docker.volumes)\n"
 	list_of = old_list = result = []
 	old_list = old_list_uvolumes
 	list_of = getDockerData("unused_volumes")
@@ -216,7 +219,7 @@ def dockerСhecker():
 	global old_list_volumes
 	for check_type in check_types:
 		status_dot = yellow_dot
-		message, header_message = "", f"*{hostname}* (docker.{check_type})\n"
+		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
 		list_of = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_volumes
@@ -247,7 +250,7 @@ def dockerСhecker():
 	#docker-container
 	global old_list_containers
 	status_dot = orange_dot
-	message, header_message = "", f"*{hostname}* (docker.containers)\n"
+	message, header_message = "", f"*{nodename}* (docker.containers)\n"
 	list_containers = result = []
 	stopped = False
 	containername, containerattr, containerstatus = "", "", "inactive"
