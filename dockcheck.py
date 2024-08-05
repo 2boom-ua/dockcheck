@@ -41,6 +41,16 @@ def getDockerData(what):
 		if what == "networks":
 			networks = docker_client.networks.list()
 			if networks: return_data = [network.name for network in networks]
+		elif what == "unetworks":
+			networks = docker_client.networks.list()
+			containers = docker_client.containers.list(all=True)
+			used_networks = set()
+			default_networks = ["none", "host"]
+			for container in containers:
+				for network in container.attrs['NetworkSettings']['Networks']:
+					used_networks.add(network)
+			unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
+			[return_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
 		elif what == "images":
 			images = docker_client.images.list()
 			if images:
@@ -121,7 +131,7 @@ if __name__ == "__main__":
 	nodename = getNodeName()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
-	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = []
+	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = old_list_unetworks = []
 	monitoring_mg = ""
 	docker_counts = getDockerCounts()
 	header_message = f"*{nodename}* (docker.check)\ndocker monitor:\n"
@@ -194,26 +204,7 @@ def dockerСhecker():
 			sendMessage(f"{header_message}{message}")
 
 
-	#docker-unused.volumes
-	global old_list_uvolumes
-	status_dot = orange_dot
-	message, header_message = "", f"*{nodename}* (docker.volumes)\n"
-	list_of = old_list = result = []
-	old_list = old_list_uvolumes
-	list_of = getDockerData("unused_volumes")
-	if list_of:
-		if len(list_of) >= len(old_list):
-			result = list(set(list_of) - set(old_list))
-			status_message = "unused"
-		old_list_uvolumes = list_of
-		if result:
-			for item in result:
-				message += f"{status_dot} *{item}*: {status_message}!\n"
-			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
-			sendMessage(f"{header_message}{message}")
-
-
-	#docker-volume-network
+	#docker-volume.network
 	check_types = ["volumes", "networks"]
 	global old_list_networks
 	global old_list_volumes
@@ -243,6 +234,38 @@ def dockerСhecker():
 			if result:
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n"
+				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				sendMessage(f"{header_message}{message}")
+
+
+	#docker-unused.volumes.networks
+	check_types = ["volumes", "networks"]
+	global old_list_uvolumes
+	global old_list_unetworks
+	for check_type in check_types:
+		status_dot = orange_dot
+		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
+		list_of = old_list = result = []
+		if check_type == "volumes":
+			old_list = old_list_uvolumes
+			list_of = getDockerData("unused_volumes")
+		else:
+			old_list = old_list_unetworks
+			list_of = getDockerData("unetworks")
+		if list_of:
+			if len(list_of) >= len(old_list):
+				result = list(set(list_of) - set(old_list))
+				status_message = "unused"
+			if check_type == "volumes":
+				old_list_uvolumes = list_of
+			else:
+				old_list_unetworks = list_of
+			if result:
+				for item in result:
+					if check_type == "volumes":
+						message += f"{status_dot} *{item}*: {status_message}!\n"
+					else:
+						message += f"{status_dot} *{item.split()[0]}* ({item.split()[-1]}): {status_message}!\n"
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 				sendMessage(f"{header_message}{message}")
 
