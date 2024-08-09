@@ -35,7 +35,7 @@
             "second tocken",
             "...."
         ],
-        "CHAT_WEB": [
+        "CHAT_URLS": [
             "first server_url",
             "second server_url",
             "...."
@@ -48,7 +48,7 @@
             "second tocken",
             "...."
         ],
-        "CHAT_WEB": [
+        "CHAT_URLS": [
             "first server_url",
             "second server_url",
             "...."
