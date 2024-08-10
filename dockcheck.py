@@ -11,6 +11,7 @@ from schedule import every, repeat, run_pending
 	
 
 def get_node_name():
+	"""Get the name of the Docker node."""
 	data = ""
 	try:
 		data = docker.from_env().info().get('Name')
@@ -20,6 +21,7 @@ def get_node_name():
 
 
 def get_docker_counts():
+	"""Get the count of Docker resources: volumes, images, networks, and containers."""
 	try:
 		docker_client = docker.from_env()
 		return {
@@ -34,6 +36,7 @@ def get_docker_counts():
 
 
 def get_docker_data(data_type: str):
+	"""Retrieve detailed data for Docker resources: volumes, images, networks, and containers."""
 	data = []
 	try:
 		docker_client = docker.from_env()
@@ -75,6 +78,7 @@ def get_docker_data(data_type: str):
 
 
 def send_message(message: str):
+	"""Send notifications to various messaging services (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover)."""
 	def send_request(url, json_data=None, data=None, headers=None):
 		try:
 			response = requests.post(url, json=json_data, data=data, headers=headers)
@@ -96,8 +100,7 @@ def send_message(message: str):
 			url = f"https://hooks.slack.com/services/{token}"
 			json_data = {"text": message}
 			send_request(url, json_data)
-	message = message.replace("*", "")
-	header, message = message.split("\n", 1)
+	header, message = message.replace("*", "").split("\n", 1)
 	message = message.strip()
 	if gotify_on:
 		for token, chat_url in zip(gotify_tokens, gotify_chat_urls):
@@ -116,9 +119,15 @@ def send_message(message: str):
 			json_data = {'type': 'note', 'title': header, 'body': message}
 			headers_data = {'Access-Token': token, 'Content-Type': 'application/json'}
 			send_request(url, json_data, None, headers_data)
+	if pushover_on:
+		for token, user_key in zip(pushover_tokens, pushover_user_keys):
+			url = "https://api.pushover.net/1/messages.json"
+			json_data = {"token": token, "user": user_key, "message": message, "title": header}
+			send_request(url, json_data)
 
 
 if __name__ == "__main__":
+	"""Load configuration and initialize monitoring"""
 	nodename = get_node_name()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
@@ -130,25 +139,25 @@ if __name__ == "__main__":
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
 		sec_repeat = int(parsed_json["SEC_REPEAT"])
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "SLACK"])
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK"])
 		services = {
 		"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],
-		"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"]
+		"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"]
 		}
 		for service, keys in services.items():
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
 				monitoring_mg += f"- messaging: {service.capitalize()},\n"
-		for type_of in docker_counts:
-			monitoring_mg += f"- monitoring: {docker_counts[type_of]} {type_of}\n"
+		for resource in docker_counts:
+			monitoring_mg += f"- monitoring: {docker_counts[resource]} {resource}\n"
 		send_message(f"{header_message}{monitoring_mg}- polling period: {sec_repeat} seconds.")	
 	else:
 		print("config.json not found")
 
-
+"""Periodically check for changes in Docker resources"""
 @repeat(every(sec_repeat).seconds)
 def docker_checker():
-	# docker-image
+	"""Check for changes in Docker images"""
 	global old_list_images
 	status_dot = yellow_dot
 	message, header_message = "", f"*{nodename}* (docker.images)\n"
@@ -183,63 +192,61 @@ def docker_checker():
 				message = message.replace(parts_ms[1], replace_name)
 			send_message(f"{header_message}{message}")
 
-
-	# docker-volume.network
+	"""Check for changes in Docker networks and volumes"""
 	check_types = ["volumes", "networks"]
 	global old_list_networks
 	global old_list_volumes
 	for check_type in check_types:
 		status_dot = yellow_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
-		list_of = old_list = result = []
+		new_list = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_volumes
-			list_of = get_docker_data("volumes")
+			new_list = get_docker_data("volumes")
 		else:
 			old_list = old_list_networks
-			list_of = get_docker_data("networks")
-		if list_of:
-			if not old_list: old_list = list_of
-			if len(list_of) >= len(old_list):
-				result = list(set(list_of) - set(old_list))
+			new_list = get_docker_data("networks")
+		if new_list:
+			if not old_list: old_list = new_list
+			if len(new_list) >= len(old_list):
+				result = list(set(new_list) - set(old_list))
 				status_message = "created"
 			else:
-				result = list(set(old_list) - set(list_of))
+				result = list(set(old_list) - set(new_list))
 				status_dot = red_dot
 				status_message = "removed"
 			if check_type == "volumes":
-				old_list_volumes = list_of
+				old_list_volumes = new_list
 			else:
-				old_list_networks = list_of
+				old_list_networks = new_list
 			if result:
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n"
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 				send_message(f"{header_message}{message}")
 
-
-	# docker-unused.volumes.networks
+	"""Check for changes in Docker unused networks and volumes"""
 	check_types = ["volumes", "networks"]
 	global old_list_uvolumes
 	global old_list_unetworks
 	for check_type in check_types:
 		status_dot = orange_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
-		list_of = old_list = result = []
+		new_list = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_uvolumes
-			list_of = get_docker_data("unused_volumes")
+			new_list = get_docker_data("unused_volumes")
 		else:
 			old_list = old_list_unetworks
-			list_of = get_docker_data("unetworks")
-		if list_of:
-			if len(list_of) >= len(old_list):
-				result = list(set(list_of) - set(old_list))
+			new_list = get_docker_data("unetworks")
+		if new_list:
+			if len(new_list) >= len(old_list):
+				result = list(set(new_list) - set(old_list))
 				status_message = "unused"
 			if check_type == "volumes":
-				old_list_uvolumes = list_of
+				old_list_uvolumes = new_list
 			else:
-				old_list_unetworks = list_of
+				old_list_unetworks = new_list
 			if result:
 				for item in result:
 					if check_type == "volumes":
@@ -249,8 +256,7 @@ def docker_checker():
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 				send_message(f"{header_message}{message}")
 
-
-	# docker-container
+	"""Check for changes in Docker containers"""
 	global old_list_containers
 	status_dot = orange_dot
 	message, header_message = "", f"*{nodename}* (docker.containers)\n"
@@ -284,7 +290,6 @@ def docker_checker():
 			if message:
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")  
 				send_message(f"{header_message}{message}")
-
 
 while True:
 	run_pending()
