@@ -1,5 +1,5 @@
 # dockchek
-A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pushbullet, Slack) as linux service
+A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pushbullet, Pushover, Slack) as linux service
 
 ![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true)
 
@@ -71,6 +71,19 @@ pip install -r requirements.txt
         "TOKENS": [
             "first tocken",
             "second tocken",
+            "...."
+        ]
+    },
+    "PUSHOVER": {
+        "ON": true,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "USER_KEYS": [
+            "first user_key",
+            "second user_key",
             "...."
         ]
     },
