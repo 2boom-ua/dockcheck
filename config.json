@@ -62,5 +62,18 @@
             "...."
         ]
     },
+    "PUSHOVER": {
+        "ON": true,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "USER_KEYS": [
+            "first user_key",
+            "second user_key",
+            "...."
+        ]
+    },
     "SEC_REPEAT": 10
 }
