@@ -161,7 +161,7 @@ def docker_checker():
 	global old_list_images
 	status_dot = yellow_dot
 	message, header_message = "", f"*{nodename}* (docker.images)\n"
-	result = []
+	list_images = result = []
 	list_images = get_docker_data("images")
 	if list_images:
 		if not old_list_images: old_list_images = list_images
@@ -170,7 +170,8 @@ def docker_checker():
 			status_message = "pulled"
 		else:
 			result = list(set(old_list_images) - set(list_images))
-			status_dot, status_message = red_dot, "removed"
+			status_dot = red_dot
+			status_message = "removed"
 		if result:
 			for image in result:
 				imageid, imagename = image.split()[0], image.split()[-1]
@@ -178,7 +179,7 @@ def docker_checker():
 					if imageid in ",".join(old_list_images) and status_dot != red_dot:
 						status_message, status_dot = "unused", orange_dot
 					message += f"{status_dot} *{imagename}*: {status_message}!\n"
-					status_dot = yellow_dot
+					if status_dot == orange_dot: status_dot = yellow_dot
 				else:
 					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "pulled"
@@ -198,7 +199,7 @@ def docker_checker():
 	for check_type in check_types:
 		status_dot = yellow_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
-		result = []
+		new_list = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_volumes
 			new_list = get_docker_data("volumes")
@@ -212,7 +213,8 @@ def docker_checker():
 				status_message = "created"
 			else:
 				result = list(set(old_list) - set(new_list))
-				status_dot, status_message = red_dot, "removed"
+				status_dot = red_dot
+				status_message = "removed"
 			if check_type == "volumes":
 				old_list_volumes = new_list
 			else:
@@ -230,7 +232,7 @@ def docker_checker():
 	for check_type in check_types:
 		status_dot = orange_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
-		result = []
+		new_list = old_list = result = []
 		if check_type == "volumes":
 			old_list = old_list_uvolumes
 			new_list = get_docker_data("unused_volumes")
@@ -258,7 +260,7 @@ def docker_checker():
 	global old_list_containers
 	status_dot = orange_dot
 	message, header_message = "", f"*{nodename}* (docker.containers)\n"
-	result = []
+	list_containers = result = []
 	stopped = False
 	containername, containerattr, containerstatus = "", "", "inactive"
 	list_containers = get_docker_data("containers")
