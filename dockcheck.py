@@ -170,8 +170,7 @@ def docker_checker():
 			status_message = "pulled"
 		else:
 			result = list(set(old_list_images) - set(list_images))
-			status_dot = red_dot
-			status_message = "removed"
+			status_dot, status_message = red_dot, "removed"
 		if result:
 			for image in result:
 				imageid, imagename = image.split()[0], image.split()[-1]
@@ -213,8 +212,7 @@ def docker_checker():
 				status_message = "created"
 			else:
 				result = list(set(old_list) - set(new_list))
-				status_dot = red_dot
-				status_message = "removed"
+				status_dot, status_message = red_dot, "removed"
 			if check_type == "volumes":
 				old_list_volumes = new_list
 			else:
