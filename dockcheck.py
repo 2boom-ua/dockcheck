@@ -67,10 +67,7 @@ def get_docker_data(data_type: str):
 				else:
 					data.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
 		else:
-			if data_type == "volumes":
-				volumes = docker_client.volumes.list()
-			else:
-				volumes = docker_client.volumes.list(filters={"dangling": "true"})
+			volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
 			if volumes: [data.append(f"{volume.short_id}") for volume in volumes]
 	except (docker.errors.DockerException, Exception) as e:
 		print(f"Error: {e}")
@@ -148,11 +145,11 @@ if __name__ == "__main__":
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
 				monitoring_mg += f"- messaging: {service.capitalize()},\n"
-		for resource in docker_counts:
-			monitoring_mg += f"- monitoring: {docker_counts[resource]} {resource}\n"
+		monitoring_mg += "".join(f"- monitoring: {count} {resource}\n" for resource, count in docker_counts.items())
 		send_message(f"{header_message}{monitoring_mg}- polling period: {sec_repeat} seconds.")	
 	else:
 		print("config.json not found")
+
 
 """Periodically check for changes in Docker resources"""
 @repeat(every(sec_repeat).seconds)
@@ -199,28 +196,18 @@ def docker_checker():
 		status_dot = yellow_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
 		new_list = old_list = result = []
-		if check_type == "volumes":
-			old_list = old_list_volumes
-			new_list = get_docker_data("volumes")
-		else:
-			old_list = old_list_networks
-			new_list = get_docker_data("networks")
+		old_list = old_list_volumes if check_type == "volumes" else old_list_networks
+		new_list = get_docker_data(check_type)
 		if new_list:
 			if not old_list: old_list = new_list
-			if len(new_list) >= len(old_list):
-				result = list(set(new_list) - set(old_list))
-				status_message = "created"
-			else:
-				result = list(set(old_list) - set(new_list))
-				status_dot, status_message = red_dot, "removed"
+			result, status_message = (list(set(new_list) - set(old_list)), "created") if len(new_list) >= len(old_list) else (list(set(old_list) - set(new_list)), "removed")
+			status_dot = red_dot if status_message == "removed" else status_dot
 			if check_type == "volumes":
 				old_list_volumes = new_list
 			else:
 				old_list_networks = new_list
 			if result:
-				for item in result:
-					message += f"{status_dot} *{item}*: {status_message}!\n"
-				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				message = "\n".join(sorted(f"{status_dot} *{item}*: {status_message}!" for item in result))
 				send_message(f"{header_message}{message}")
 
 	"""Check for changes in Docker unused networks and volumes"""
@@ -231,12 +218,8 @@ def docker_checker():
 		status_dot = orange_dot
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
 		new_list = old_list = result = []
-		if check_type == "volumes":
-			old_list = old_list_uvolumes
-			new_list = get_docker_data("unused_volumes")
-		else:
-			old_list = old_list_unetworks
-			new_list = get_docker_data("unetworks")
+		old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
+		new_list = get_docker_data(f"u{check_type}")
 		if new_list:
 			if len(new_list) >= len(old_list):
 				result = list(set(new_list) - set(old_list))
@@ -247,10 +230,7 @@ def docker_checker():
 				old_list_unetworks = new_list
 			if result:
 				for item in result:
-					if check_type == "volumes":
-						message += f"{status_dot} *{item}*: {status_message}!\n"
-					else:
-						message += f"{status_dot} *{item.split()[0]}* ({item.split()[-1]}): {status_message}!\n"
+					message += f"{status_dot} *{item}*: {status_message}!\n" if check_type == "volumes" else f"{status_dot} *{item.split()[0]}* ({item.split()[-1]}): {status_message}!\n"
 				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
 				send_message(f"{header_message}{message}")
 
@@ -264,11 +244,9 @@ def docker_checker():
 	list_containers = get_docker_data("containers")
 	if list_containers:
 		if not old_list_containers: old_list_containers = list_containers
-		if len(list_containers) >= len(old_list_containers):
-			result = list(set(list_containers) - set(old_list_containers)) 
-		else:
-			result = list(set(old_list_containers) - set(list_containers))
-			stopped = True
+		result = list(set(list_containers) - set(old_list_containers)) if len(list_containers) >= len(old_list_containers) else list(set(old_list_containers) - set(list_containers))
+		stopped = len(list_containers) < len(old_list_containers)
+
 		if result:
 			old_list_containers = list_containers
 			for container in result:
