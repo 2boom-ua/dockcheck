@@ -137,10 +137,8 @@ if __name__ == "__main__":
 			parsed_json = json.loads(file.read())
 		sec_repeat = int(parsed_json["SEC_REPEAT"])
 		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK"])
-		services = {
-		"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],
-		"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"]
-		}
+		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"],
+			"NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"]}
 		for service, keys in services.items():
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
@@ -200,8 +198,12 @@ def docker_checker():
 		new_list = get_docker_data(check_type)
 		if new_list:
 			if not old_list: old_list = new_list
-			result, status_message = (list(set(new_list) - set(old_list)), "created") if len(new_list) >= len(old_list) else (list(set(old_list) - set(new_list)), "removed")
-			status_dot = red_dot if status_message == "removed" else status_dot
+			if len(new_list) >= len(old_list):
+				result = list(set(new_list) - set(old_list))
+				status_message = "created"
+			else:
+				result = list(set(old_list) - set(new_list))
+				status_dot, status_message = red_dot, "removed"
 			if check_type == "volumes":
 				old_list_volumes = new_list
 			else:
@@ -244,9 +246,11 @@ def docker_checker():
 	list_containers = get_docker_data("containers")
 	if list_containers:
 		if not old_list_containers: old_list_containers = list_containers
-		result = list(set(list_containers) - set(old_list_containers)) if len(list_containers) >= len(old_list_containers) else list(set(old_list_containers) - set(list_containers))
-		stopped = len(list_containers) < len(old_list_containers)
-
+		if len(list_containers) >= len(old_list_containers):
+			result = list(set(list_containers) - set(old_list_containers)) 
+		else:
+			result = list(set(old_list_containers) - set(list_containers))
+			stopped = True
 		if result:
 			old_list_containers = list_containers
 			for container in result:
