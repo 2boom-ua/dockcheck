@@ -1,5 +1,12 @@
 # dockchek
-A Docker State Change Monitor and Notifier (Telegram, Discord, Gotify, Ntfy, Pushbullet, Pushover, Slack) as linux service
+Python script monitors Docker resources (containers, images, networks, and volumes) on a node and sends notifications when changes occur. 
+
+Resource Counting: Counts Docker volumes, images, networks, and containers.
+Detailed Data Retrieval: Gathers detailed information on Docker resources, including unused networks and volumes.
+Messaging Integration: Sends notifications via multiple platforms (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, and Pushover) whenever there are changes, like new images being pulled, containers stopping, or networks being created or removed.
+Periodic Monitoring: The script runs continuously, checking for updates at regular intervals specified in a configuration file (config.json).
+
+The script is designed to keep Docker administrators informed about the state of their Docker environment, alerting them to changes that could indicate potential issues or necessary actions. It combines Docker's API with various messaging services to ensure timely and effective communication.
 
 ![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true)
 
