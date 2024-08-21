@@ -6,7 +6,7 @@ Detailed Data Retrieval: Gathers detailed information on Docker resources, inclu
 Messaging Integration: Sends notifications via multiple platforms (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, and Pushover) whenever there are changes, like new images being pulled, containers stopping, or networks being created or removed.
 Periodic Monitoring: The script runs continuously, checking for updates at regular intervals specified in a configuration file (config.json).
 
-The script is designed to keep Docker administrators informed about the state of their Docker environment, alerting them to changes that could indicate potential issues or necessary actions. It combines Docker's API with various messaging services to ensure timely and effective communication.
+The script is designed to keep Docker administrators informed about the state of their Docker environment, alerting them to changes that could indicate potential issues or necessary actions. 
 
 ![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true)
 
