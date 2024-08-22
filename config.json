@@ -75,5 +75,6 @@
             "...."
         ]
     },
+    "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
