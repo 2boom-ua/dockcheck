@@ -12,12 +12,12 @@ from schedule import every, repeat, run_pending
 
 def get_node_name():
 	"""Get the name of the Docker node."""
-	data = ""
+	node_name = ""
 	try:
-		data = docker.from_env().info().get('Name')
+		node_name = docker.from_env().info().get('Name')
 	except docker.errors.DockerException as e:
 		print("Error:", e)
-	return data
+	return node_name
 
 
 def get_docker_counts():
@@ -127,8 +127,9 @@ if __name__ == "__main__":
 	"""Load configuration and initialize monitoring"""
 	nodename = get_node_name()
 	current_path = os.path.dirname(os.path.realpath(__file__))
-	orange_dot, green_dot, red_dot, yellow_dot = "\U0001F7E0", "\U0001F7E2", "\U0001F534", "\U0001F7E1"
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = old_list_unetworks = []
+	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
+	square_dot = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
 	monitoring_mg = ""
 	docker_counts = get_docker_counts()
 	header_message = f"*{nodename}* (docker.check)\ndocker monitor:\n"
@@ -136,6 +137,10 @@ if __name__ == "__main__":
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
 		sec_repeat = int(parsed_json["SEC_REPEAT"])
+		default_dot_style = parsed_json["DEFAULT_DOT_STYLE"]
+		if not default_dot_style:
+			dots = square_dot
+		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK"])
 		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"],
 			"NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"]}
