@@ -42,7 +42,7 @@
         ]
     },
     "NTFY": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -63,7 +63,7 @@
         ]
     },
     "PUSHOVER": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
