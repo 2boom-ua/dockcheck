@@ -1,6 +1,6 @@
 # dockchek
 
-![Logo]((https://github.com/2boom-ua/dockchek/blob/main/dockcheck.png))
+![Logo](https://github.com/2boom-ua/dockchek/blob/main/dockcheck.png)
 
 
 Python script monitors Docker resources (containers, images, networks, and volumes) on a node and sends notifications when changes occur. 
