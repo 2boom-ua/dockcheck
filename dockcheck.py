@@ -159,17 +159,16 @@ if __name__ == "__main__":
 def docker_checker():
 	"""Check for changes in Docker images"""
 	global old_list_images
-	status_dot = yellow_dot
+	status_dot, status_message = yellow_dot, "pulled"
 	message, header_message = "", f"*{nodename}* (docker.images)\n"
 	list_images = result = []
 	list_images = get_docker_data("images")
 	if list_images:
 		if not old_list_images: old_list_images = list_images
 		if len(list_images) >= len(old_list_images):
-			result = list(set(list_images) - set(old_list_images))
-			status_message = "pulled"
+			result = [image for image in list_images if image not in old_list_images]
 		else:
-			result = list(set(old_list_images) - set(list_images))
+			result = [image for image in old_list_images if image not in list_images]
 			status_dot, status_message = red_dot, "removed"
 		if result:
 			for image in result:
@@ -183,7 +182,7 @@ def docker_checker():
 					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "pulled"
 			old_list_images = list_images
-			message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+			message = "\n".join(sorted(message.splitlines()))
 			if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]):
 				parts_ms = message.split()
 				unused_id, name_im = parts_ms[1].rstrip(':').strip('*'), parts_ms[4]
@@ -196,7 +195,7 @@ def docker_checker():
 	global old_list_networks
 	global old_list_volumes
 	for check_type in check_types:
-		status_dot = yellow_dot
+		status_dot, status_message = yellow_dot, "created"
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
 		new_list = old_list = result = []
 		old_list = old_list_volumes if check_type == "volumes" else old_list_networks
@@ -204,10 +203,9 @@ def docker_checker():
 		if new_list:
 			if not old_list: old_list = new_list
 			if len(new_list) >= len(old_list):
-				result = list(set(new_list) - set(old_list))
-				status_message = "created"
+				result = [item for item in new_list if item not in old_list]
 			else:
-				result = list(set(old_list) - set(new_list))
+				result = [item for item in old_list if item not in new_list]
 				status_dot, status_message = red_dot, "removed"
 			if check_type == "volumes":
 				old_list_volumes = new_list
@@ -222,15 +220,14 @@ def docker_checker():
 	global old_list_uvolumes
 	global old_list_unetworks
 	for check_type in check_types:
-		status_dot = orange_dot
+		status_dot, status_message = orange_dot, "unused"
 		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
 		new_list = old_list = result = []
 		old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
 		new_list = get_docker_data(f"u{check_type}")
 		if new_list:
 			if len(new_list) >= len(old_list):
-				result = list(set(new_list) - set(old_list))
-				status_message = "unused"
+				result = [item for item in new_list if item not in old_list]
 			if check_type == "volumes":
 				old_list_uvolumes = new_list
 			else:
@@ -238,7 +235,7 @@ def docker_checker():
 			if result:
 				for item in result:
 					message += f"{status_dot} *{item}*: {status_message}!\n" if check_type == "volumes" else f"{status_dot} *{item.split()[0]}* ({item.split()[-1]}): {status_message}!\n"
-				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")
+				message = "\n".join(sorted(message.splitlines()))
 				send_message(f"{header_message}{message}")
 
 	"""Check for changes in Docker containers"""
@@ -247,33 +244,39 @@ def docker_checker():
 	message, header_message = "", f"*{nodename}* (docker.containers)\n"
 	list_containers = result = []
 	stopped = False
-	containername, containerattr, containerstatus = "", "", "inactive"
+	container_name, container_attr, container_status = "", "", "inactive"
 	list_containers = get_docker_data("containers")
 	if list_containers:
-		if not old_list_containers: old_list_containers = list_containers
+		if not old_list_containers:
+			old_list_containers = list_containers
 		if len(list_containers) >= len(old_list_containers):
-			result = list(set(list_containers) - set(old_list_containers)) 
+			result = [item for item in list_containers if item not in old_list_containers]
 		else:
-			result = list(set(old_list_containers) - set(list_containers))
+			result = [item for item in old_list_containers if item not in list_containers]
 			stopped = True
 		if result:
 			old_list_containers = list_containers
 			for container in result:
-				containername = "".join(container).split()[0]
-				if containername != "":
-					containerattr = "".join(container).split()[2]
-					if containerattr != "starting":
-						if not stopped: containerstatus = "".join(container).split()[1]
-						if containerstatus == "running":
+				container_info = "".join(container).split()
+				container_name = container_info[0]
+				if container_name:
+					container_attr = container_info[2]
+					if container_attr != "starting":
+						if not stopped: container_status = container_info[1]
+						if container_status == "running":
 							status_dot = green_dot
-							if containerattr != containerstatus: containerstatus = f"{containerstatus} ({containerattr})"
-							if containerattr == "unhealthy": status_dot = orange_dot
-						elif containerstatus == "created": status_dot = yellow_dot
-						elif containerstatus == "inactive": status_dot = red_dot
-						message += f"{status_dot} *{containername}*: {containerstatus}!\n"
+							if container_attr != container_status:
+								container_status = f"{container_status} ({container_attr})"
+							if container_attr == "unhealthy":
+								status_dot = orange_dot
+						elif container_status == "created":
+							status_dot = yellow_dot
+						elif container_status == "inactive":
+							status_dot = red_dot
+						message += f"{status_dot} *{container_name}*: {container_status}!\n"
 				status_dot = orange_dot
 			if message:
-				message = "\n".join(sorted(message.split("\n"))).lstrip("\n")  
+				message = "\n".join(sorted(message.splitlines()))
 				send_message(f"{header_message}{message}")
 
 while True:
