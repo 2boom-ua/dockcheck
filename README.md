@@ -1,4 +1,7 @@
 # dockchek
+
+![Logo]([https://your-repository-url/path-to-image](https://github.com/2boom-ua/dockchek/blob/main/dockcheck.svg))
+
 Python script monitors Docker resources (containers, images, networks, and volumes) on a node and sends notifications when changes occur. 
 
 Resource Counting: Counts Docker volumes, images, networks, and containers.
