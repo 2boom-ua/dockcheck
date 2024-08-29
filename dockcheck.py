@@ -76,9 +76,9 @@ def get_docker_data(data_type: str):
 
 def send_message(message: str):
 	"""Send notifications to various messaging services (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover)."""
-	def send_request(url, json_data=None, data=None, headers=None):
+	def send_request(url, json_data = None, data = None, headers = None):
 		try:
-			response = requests.post(url, json=json_data, data=data, headers=headers)
+			response = requests.post(url, json = json_data, data = data, headers = headers)
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
