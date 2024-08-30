@@ -10,14 +10,13 @@ import requests
 from schedule import every, repeat, run_pending
 	
 
-def get_node_name():
+def get_node_name() -> str:
 	"""Get the name of the Docker node."""
-	node_name = ""
 	try:
-		node_name = docker.from_env().info().get('Name')
+		return docker.from_env().info().get('Name')
 	except docker.errors.DockerException as e:
 		print("Error:", e)
-	return node_name
+	return ""
 
 
 def get_docker_counts():
