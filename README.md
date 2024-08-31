@@ -1,4 +1,4 @@
-# dockchek
+# dockcheck
 
 Python script monitors Docker resources (containers, images, networks, and volumes) on a node and sends notifications when changes occur. 
 
