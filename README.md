@@ -1,5 +1,5 @@
 <div style="text-align:center;">
-  <img src="https://github.com/2boom-ua/dockchek/blob/main/dockcheck.png" alt="Logo" width="200"/>
+  <img src="https://github.com/2boom-ua/dockchek/blob/main/dockcheck.png" alt="Logo" width="100"/>
 </div>
 
 # dockcheck
