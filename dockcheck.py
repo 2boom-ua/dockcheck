@@ -46,8 +46,7 @@ def get_docker_data(data_type: str):
 			used_networks = []
 			default_networks = ["none", "host"]
 			networks = docker_client.networks.list()
-			containers = docker_client.containers.list(all=True)
-			for container in containers:
+			for container in docker_client.containers.list(all=True):
 				[used_networks.append(network) for network in container.attrs['NetworkSettings']['Networks']]
 			unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
 			if unused_networks: [data.append(f"{network.name} {network.short_id}") for network in unused_networks]
@@ -55,16 +54,15 @@ def get_docker_data(data_type: str):
 			images = docker_client.images.list()
 			if images:
 				for image in images:
-					imagename = ''.join(image.tags).split(':')[0].split('/')[-1]
-					if imagename == '': imagename = image.short_id.split(':')[-1]
+					imagename = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
 					data.append(f"{image.short_id.split(':')[-1]} {imagename}")
 		elif data_type == "containers":
 			for container in docker_client.containers.list(all=True):
 				container_info = docker_client.api.inspect_container(container.id)
-				if "State" in container_info and "Health" in container_info["State"]:
-					data.append(f"{container.name} {container.status} {container.attrs['State']['Health']['Status']} {container.short_id}")
-				else:
-					data.append(f"{container.name} {container.status} {container.attrs['State']['Status']} {container.short_id}")
+				health_status = container_info.get("State", {}).get("Health", {}).get("Status")
+				status = health_status if health_status else container_info["State"]["Status"]
+				data.append(f"{container.name} {container.status} {status} {container.short_id}")
+
 		else:
 			volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
 			if volumes: [data.append(f"{volume.short_id}") for volume in volumes]
@@ -124,21 +122,21 @@ def send_message(message: str):
 
 if __name__ == "__main__":
 	"""Load configuration and initialize monitoring"""
-	nodename = get_node_name()
+	node_name = get_node_name()
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = old_list_unetworks = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
-	square_dot = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
+	square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
 	monitoring_mg = ""
 	docker_counts = get_docker_counts()
-	header_message = f"*{nodename}* (docker.check)\ndocker monitor:\n"
+	header_message = f"*{node_name}* (docker.check)\ndocker monitor:\n"
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
 			parsed_json = json.loads(file.read())
 		sec_repeat = int(parsed_json["SEC_REPEAT"])
 		default_dot_style = parsed_json["DEFAULT_DOT_STYLE"]
 		if not default_dot_style:
-			dots = square_dot
+			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK"])
 		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"],
@@ -159,7 +157,7 @@ def docker_checker():
 	"""Check for changes in Docker images"""
 	global old_list_images
 	status_dot, status_message = yellow_dot, "pulled"
-	message, header_message = "", f"*{nodename}* (docker.images)\n"
+	message, header_message = "", f"*{node_name}* (docker.images)\n"
 	list_images = result = []
 	list_images = get_docker_data("images")
 	if list_images:
@@ -183,10 +181,10 @@ def docker_checker():
 			old_list_images = list_images
 			message = "\n".join(sorted(message.splitlines()))
 			if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]):
-				parts_ms = message.split()
-				unused_id, name_im = parts_ms[1].rstrip(':').strip('*'), parts_ms[4]
-				replace_name = f"{name_im} ({unused_id}):"
-				message = message.replace(parts_ms[1], replace_name)
+				parts_message = message.split()
+				unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4]
+				replace_name = f"{name_image} ({unused_id}):"
+				message = message.replace(parts_message[1], replace_name)
 			send_message(f"{header_message}{message}")
 
 	"""Check for changes in Docker networks and volumes"""
@@ -195,7 +193,7 @@ def docker_checker():
 	global old_list_volumes
 	for check_type in check_types:
 		status_dot, status_message = yellow_dot, "created"
-		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
+		message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
 		new_list = old_list = result = []
 		old_list = old_list_volumes if check_type == "volumes" else old_list_networks
 		new_list = get_docker_data(check_type)
@@ -220,7 +218,7 @@ def docker_checker():
 	global old_list_unetworks
 	for check_type in check_types:
 		status_dot, status_message = orange_dot, "unused"
-		message, header_message = "", f"*{nodename}* (docker.{check_type})\n"
+		message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
 		new_list = old_list = result = []
 		old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
 		new_list = get_docker_data(f"u{check_type}")
@@ -240,7 +238,7 @@ def docker_checker():
 	"""Check for changes in Docker containers"""
 	global old_list_containers
 	status_dot = orange_dot
-	message, header_message = "", f"*{nodename}* (docker.containers)\n"
+	message, header_message = "", f"*{node_name}* (docker.containers)\n"
 	list_containers = result = []
 	stopped = False
 	container_name, container_attr, container_status = "", "", "inactive"
