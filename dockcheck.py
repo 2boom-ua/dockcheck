@@ -62,7 +62,6 @@ def get_docker_data(data_type: str):
 				health_status = container_info.get("State", {}).get("Health", {}).get("Status")
 				status = health_status if health_status else container_info["State"]["Status"]
 				data.append(f"{container.name} {container.status} {status} {container.short_id}")
-
 		else:
 			volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
 			if volumes: [data.append(f"{volume.short_id}") for volume in volumes]
@@ -168,10 +167,12 @@ def docker_checker():
 			result = [image for image in old_list_images if image not in list_images]
 			status_dot, status_message = red_dot, "removed"
 		if result:
+			old_images_str = ",".join(old_list_images)
 			for image in result:
-				imageid, imagename = image.split()[0], image.split()[-1]
+				parts = image.split()
+				imageid, imagename = parts[0], parts[-1]
 				if imageid == imagename:
-					if imageid in ",".join(old_list_images) and status_dot != red_dot:
+					if imageid in old_images_str and status_dot != red_dot:
 						status_message, status_dot = "unused", orange_dot
 					message += f"{status_dot} *{imagename}*: {status_message}!\n"
 					if status_dot == orange_dot: status_dot = yellow_dot
