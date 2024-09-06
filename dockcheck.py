@@ -54,8 +54,8 @@ def get_docker_data(data_type: str):
 			images = docker_client.images.list()
 			if images:
 				for image in images:
-					imagename = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
-					data.append(f"{image.short_id.split(':')[-1]} {imagename}")
+					image_name = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
+					data.append(f"{image.short_id.split(':')[-1]} {image_name}")
 		elif data_type == "containers":
 			for container in docker_client.containers.list(all=True):
 				container_info = docker_client.api.inspect_container(container.id)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 	"""Load configuration and initialize monitoring"""
 	node_name = get_node_name()
 	current_path = os.path.dirname(os.path.realpath(__file__))
-	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = old_list_unetworks = []
+	old_list_containers = old_list_networks = old_list_volumes = old_list_images = old_list_uvolumes = old_list_unetworks = unused_id_name = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
 	square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
 	monitoring_mg = ""
@@ -155,6 +155,7 @@ if __name__ == "__main__":
 def docker_checker():
 	"""Check for changes in Docker images"""
 	global old_list_images
+	global unused_id_name
 	status_dot, status_message = yellow_dot, "pulled"
 	message, header_message = "", f"*{node_name}* (docker.images)\n"
 	list_images = result = []
@@ -169,22 +170,31 @@ def docker_checker():
 		if result:
 			old_images_str = ",".join(old_list_images)
 			for image in result:
-				parts = image.split()
-				imageid, imagename = parts[0], parts[-1]
-				if imageid == imagename:
-					if imageid in old_images_str and status_dot != red_dot:
+				parts_image_data = image.split()
+				image_id, image_name = parts_image_data[0], parts_image_data[-1]
+				if image_id == image_name:
+					if image_id in old_images_str and status_dot != red_dot:
 						status_message, status_dot = "unused", orange_dot
-					message += f"{status_dot} *{imagename}*: {status_message}!\n"
+					if image_id in "".join(unused_id_name):
+						for unsed_image in unused_id_name:
+							if image_id in unsed_image:
+								parts_unused = unsed_image.split()
+								image_unsed_name, image_unsed_id = parts_unused[0], parts_unused[-1]
+								message += f"{status_dot} *{image_unsed_name}* ({image_unsed_id}): unused, {status_message}!\n"
+								unused_id_name.remove(unsed_image)
+					else:
+						message += f"{status_dot} *{image_name}*: {status_message}!\n"
 					if status_dot == orange_dot: status_dot = yellow_dot
 				else:
-					message += f"{status_dot} *{imagename}* ({imageid}): {status_message}!\n"
+					message += f"{status_dot} *{image_name}* ({image_id}): {status_message}!\n"
 				if status_dot == yellow_dot: status_message = "pulled"
 			old_list_images = list_images
 			message = "\n".join(sorted(message.splitlines()))
 			if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]):
 				parts_message = message.split()
-				unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4]
-				replace_name = f"{name_image} ({unused_id}):"
+				unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4].strip('*')
+				replace_name = f"*{name_image}* ({unused_id}):"
+				unused_id_name.append(f"{name_image} {unused_id}")
 				message = message.replace(parts_message[1], replace_name)
 			send_message(f"{header_message}{message}")
 
