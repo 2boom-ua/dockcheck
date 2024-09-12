@@ -13,7 +13,8 @@ from schedule import every, repeat, run_pending
 def get_node_name() -> str:
 	"""Get the name of the Docker node."""
 	try:
-		return docker.from_env().info().get('Name')
+		docker_client = docker.from_env()
+		return docker_client.info().get('Name', "")
 	except docker.errors.DockerException as e:
 		print("Error:", e)
 	return ""
@@ -36,12 +37,12 @@ def get_docker_counts():
 
 def get_docker_data(data_type: str):
 	"""Retrieve detailed data for Docker resources: volumes, images, networks, and containers."""
-	data = []
+	resource_data = []
 	try:
 		docker_client = docker.from_env()
 		if data_type == "networks":
 			networks = docker_client.networks.list()
-			if networks: [data.append(f"{network.name}") for network in networks]
+			if networks: [resource_data.append(f"{network.name}") for network in networks]
 		elif data_type == "unetworks":
 			used_networks = []
 			default_networks = ["none", "host"]
@@ -49,32 +50,33 @@ def get_docker_data(data_type: str):
 			for container in docker_client.containers.list(all=True):
 				[used_networks.append(network) for network in container.attrs['NetworkSettings']['Networks']]
 			unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
-			if unused_networks: [data.append(f"{network.name} {network.short_id}") for network in unused_networks]
+			if unused_networks: [resource_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
 		elif data_type == "images":
 			images = docker_client.images.list()
 			if images:
 				for image in images:
 					image_name = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
-					data.append(f"{image.short_id.split(':')[-1]} {image_name}")
+					resource_data.append(f"{image.short_id.split(':')[-1]} {image_name}")
 		elif data_type == "containers":
 			for container in docker_client.containers.list(all=True):
 				container_info = docker_client.api.inspect_container(container.id)
 				health_status = container_info.get("State", {}).get("Health", {}).get("Status")
 				status = health_status if health_status else container_info["State"]["Status"]
-				data.append(f"{container.name} {container.status} {status} {container.short_id}")
+				resource_data.append(f"{container.name} {container.status} {status} {container.short_id}")
 		else:
 			volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
-			if volumes: [data.append(f"{volume.short_id}") for volume in volumes]
+			if volumes: [resource_data.append(f"{volume.short_id}") for volume in volumes]
 	except (docker.errors.DockerException, Exception) as e:
 		print(f"Error: {e}")
-	return data
+	return resource_data
 
 
 def send_message(message: str):
 	"""Send notifications to various messaging services (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover)."""
-	def send_request(url, json_data = None, data = None, headers = None):
+	def send_request(url, json_data=None, data=None, headers=None):
+		"""Send an HTTP POST request and handle exceptions."""
 		try:
-			response = requests.post(url, json = json_data, data = data, headers = headers)
+			response = requests.post(url, json=json_data, data=data, headers=headers)
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
