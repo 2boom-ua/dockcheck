@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ```
 {
     "TELEGRAM": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -66,7 +66,7 @@ pip install -r requirements.txt
         ]
     },
     "NTFY": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -87,7 +87,7 @@ pip install -r requirements.txt
         ]
     },
     "PUSHOVER": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -100,7 +100,7 @@ pip install -r requirements.txt
         ]
     },
     "MATRIX": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
