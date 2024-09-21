@@ -75,6 +75,24 @@
             "...."
         ]
     },
+    "MATRIX": {
+        "ON": true,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+        "SERVER_URLS": [
+            "first server_url",
+            "second server_url",
+            "...."
+        ],
+        "ROOM_IDS": [
+            "!first room_id",
+            "!second room_id",
+            "...."
+        ]
+    },
     "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
