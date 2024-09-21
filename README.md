@@ -8,7 +8,7 @@ Python script monitors Docker resources (containers, images, networks, and volum
 
 Resource Counting: Counts Docker volumes, images, networks, and containers.
 Detailed Data Retrieval: Gathers detailed information on Docker resources, including unused networks and volumes.
-Messaging Integration: Sends notifications via multiple platforms (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover and Matrix) whenever there are changes, like new images being pulled, containers stopping, or networks being created or removed.
+Messaging Integration: Sends notifications via multiple platforms (**Telegram**, **Discord**, **Slack**, **Gotify**, **Ntfy**, **Pushbullet**, **Pushover** and **Matrix**) whenever there are changes, like new images being pulled, containers stopping, or networks being created or removed.
 Periodic Monitoring: The script runs continuously, checking for updates at regular intervals specified in a configuration file (config.json).
 
 The script is designed to keep Docker administrators informed about the state of their Docker environment, alerting them to changes that could indicate potential issues or necessary actions. 
