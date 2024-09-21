@@ -72,7 +72,7 @@ def getDockerData(data_type: str):
 
 
 def SendMessage(message: str):
-	"""Send notifications to various messaging services (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover)."""
+	"""Send notifications to various messaging services (Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover, Matrix)."""
 	def SendRequest(url, json_data=None, data=None, headers=None):
 		"""Send an HTTP POST request and handle exceptions."""
 		try:
@@ -95,8 +95,17 @@ def SendMessage(message: str):
 			url = f"https://hooks.slack.com/services/{token}"
 			json_data = {"text": message}
 			SendRequest(url, json_data)
+	if matrix_on:
+		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
+			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
+			matrix_message = "<br>".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
+			json_data = {"msgtype": "m.text", "body": matrix_message, "format": "org.matrix.custom.html", "formatted_body": matrix_message}
+			headers_data = {"Content-Type": "application/json"}
+			SendRequest(url, json_data, None, headers_data)
+	
 	header, message = message.replace("*", "").split("\n", 1)
 	message = message.strip()
+
 	if gotify_on:
 		for token, chat_url in zip(gotify_tokens, gotify_chat_urls):
 			url = f"{chat_url}/message?token={token}"
@@ -119,7 +128,7 @@ def SendMessage(message: str):
 			url = "https://api.pushover.net/1/messages.json"
 			json_data = {"token": token, "user": user_key, "message": message, "title": header}
 			SendRequest(url, json_data)
-
+	
 
 if __name__ == "__main__":
 	"""Load configuration and initialize monitoring"""
@@ -145,9 +154,9 @@ if __name__ == "__main__":
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK"])
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX"])
 		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"],
-			"NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"]}
+			"NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"], "MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"]}
 		for service, keys in services.items():
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
