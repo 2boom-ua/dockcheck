@@ -1,6 +1,6 @@
 {
     "TELEGRAM": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -76,7 +76,7 @@
         ]
     },
     "MATRIX": {
-        "ON": true,
+        "ON": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
