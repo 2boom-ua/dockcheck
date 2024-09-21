@@ -24,4 +24,4 @@ if __name__ == "__main__":
 	server_url = "https://your_server"
 	
 	access_token = matrix_login(user_name, password, server_url)
-	print(access_token)
+	print(f"Token: {access_token}")
