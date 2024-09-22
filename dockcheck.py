@@ -80,6 +80,7 @@ def SendMessage(message: str):
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
+
 	if telegram_on:
 		for token, chat_id in zip(telegram_tokens, telegram_chat_ids):
 			url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -98,8 +99,8 @@ def SendMessage(message: str):
 	if matrix_on:
 		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
 			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
-			matrix_message = "<br>".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
-			json_data = {"msgtype": "m.text", "body": matrix_message, "format": "org.matrix.custom.html", "formatted_body": matrix_message}
+			formated_message = "<br>".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
+			json_data = {"msgtype": "m.text", "body": formated_message, "format": "org.matrix.custom.html", "formatted_body": formated_message}
 			headers_data = {"Content-Type": "application/json"}
 			SendRequest(url, json_data, None, headers_data)
 	
@@ -114,9 +115,9 @@ def SendMessage(message: str):
 	if ntfy_on:
 		for token, chat_url in zip(ntfy_tokens, ntfy_chat_urls):
 			url = f"{chat_url}/{token}"
-			data_data = message.encode(encoding = 'utf-8')
+			encoded_message = message.encode(encoding = 'utf-8')
 			headers_data = {"title": header}
-			SendRequest(url, None, data_data, headers_data)
+			SendRequest(url, None, encoded_message, headers_data)
 	if pushbullet_on:
 		for token in pushbullet_tokens:
 			url = "https://api.pushbullet.com/v2/pushes"
