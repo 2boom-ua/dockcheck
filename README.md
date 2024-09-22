@@ -42,7 +42,7 @@ cd dockcheck
 pip install -r requirements.txt
 ```
 
-### Create config.json:
+### Edit config.json:
 A **config.json** file in the same directory as the script, and include your API tokens and configuration settings.
 
 ```
