@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Copyright (c) 2024 2boom. This project is licensed under the MIT License - see the https://opensource.org/licenses/MIT for details."""
+#Copyright (c) 2024 2boom.
 
 import json
 import docker
