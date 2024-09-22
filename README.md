@@ -1,26 +1,45 @@
-<div style="text-align:center;">
-  <img src="https://github.com/2boom-ua/dockchek/blob/main/dockcheck.png" alt="Logo" width="100"/>
+# Docker Monitoring & Notification Script
+
+This Python script monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected. It supports various messaging services.
+
+<div align="center">  
+    <img src="https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true" alt="" width="700" height="400">
 </div>
 
-# dockcheck
 
-Python script monitors Docker resources (containers, images, networks, and volumes) on a node and sends notifications when changes occur. 
+## Features
 
-Resource Counting: Counts Docker volumes, images, networks, and containers.
-Detailed Data Retrieval: Gathers detailed information on Docker resources, including unused networks and volumes.
-Messaging Integration: Sends notifications via multiple platforms (**Telegram**, **Discord**, **Slack**, **Gotify**, **Ntfy**, **Pushbullet**, **Pushover** and **Matrix**) whenever there are changes, like new images being pulled, containers stopping, or networks being created or removed.
-Periodic Monitoring: The script runs continuously, checking for updates at regular intervals specified in a configuration file (config.json).
+- **Monitors Docker resources:**
+  - Containers (running, stopped, created, unhealthy, etc.)
+  - Images (pulled, removed, unused)
+  - Volumes and Networks (created, removed, unused)
+- **Real-time notifications** via:
+  - Telegram
+  - Discord
+  - Slack
+  - Gotify
+  - Ntfy
+  - Pushbullet
+  - Pushover
+  - Matrix
+- **Customizable polling interval** through a configuration file (`config.json`).
+- **Periodic checks** with Docker resource updates logged and reported.
 
-The script is designed to keep Docker administrators informed about the state of their Docker environment, alerting them to changes that could indicate potential issues or necessary actions. 
+## Requirements
 
-![alt text](https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true)
+- Python 3.x
+- Docker installed and running
+- Dependencies: `docker`, `requests`, `schedule`
 
+### Install required Python packages:
 
 ```
 pip install -r requirements.txt
 ```
 
-**config.json**
+### Create config.json:
+A **config.json** file in the same directory as the script, and include your API tokens and configuration settings.
+
 ```
 {
     "TELEGRAM": {
@@ -121,10 +140,15 @@ pip install -r requirements.txt
     "SEC_REPEAT": 10
 }
 ```
-**make as service**
+## Running as a Linux Service
+You can set this script to run as a Linux service for continuous monitoring.
+
+Create a systemd service file:
 ```
 nano /etc/systemd/system/dockcheck.service
 ```
+Add the following content:
+
 ```
 [Unit]
 Description=docker state change monitor
@@ -138,6 +162,8 @@ ExecStart=/usr/bin/python3 /opt/dockcheck/dockcheck.py
 [Install]
 WantedBy=multi-user.target
 ```
+Start and enable the service:
+
 ```
 systemctl daemon-reload
 ```
@@ -147,3 +173,8 @@ systemctl enable dockcheck.service
 ```
 systemctl start dockcheck.service
 ```
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+2boom
