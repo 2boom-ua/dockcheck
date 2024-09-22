@@ -177,4 +177,4 @@ systemctl start dockcheck.service
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Author
-2boom
+**2boom**
