@@ -31,6 +31,11 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 - Docker installed and running
 - Dependencies: `docker`, `requests`, `schedule`
 
+### Clone the repository:
+```
+git clone https://github.com/2boom-ua/dockcheck.git
+cd dockcheck
+```
 ### Install required Python packages:
 
 ```
