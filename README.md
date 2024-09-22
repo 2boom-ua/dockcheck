@@ -1,4 +1,4 @@
-# Docker Monitoring & Notification Script
+## Docker Monitoring & Notification Script
 
 This Python script monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected. It supports various messaging services.
 
@@ -7,7 +7,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 </div>
 
 
-## Features
+### Features
 
 - **Monitors Docker resources:**
   - Containers (running, stopped, created, unhealthy, etc.)
@@ -25,7 +25,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 - **Customizable polling interval** through a configuration file (`config.json`).
 - **Periodic checks** with Docker resource updates logged and reported.
 
-## Requirements
+### Requirements
 
 - Python 3.x
 - Docker installed and running
