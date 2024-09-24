@@ -13,7 +13,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
   - Containers (running, stopped, created, unhealthy, etc.)
   - Images (pulled, removed, unused)
   - Volumes and Networks (created, removed, unused)
-- **Real-time notifications** via:
+- **Real-time notifications with support for multiple accounts** via:
   - Telegram
   - Discord
   - Slack
