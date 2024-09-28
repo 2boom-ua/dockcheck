@@ -93,6 +93,14 @@
             "...."
         ]
     },
+    "MATTERMOST": {
+        "ON": false,
+        "CHAT_URLS": [
+            "first server_url",
+            "second server_url",
+            "...."
+        ]
+    },
     "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
