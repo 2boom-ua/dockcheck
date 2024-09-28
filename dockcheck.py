@@ -91,6 +91,12 @@ def SendMessage(message: str):
 			url = f"https://discord.com/api/webhooks/{token}"
 			json_data = {"content": message.replace("*", "**")}
 			SendRequest(url, json_data)
+	if mattermost_on:
+		for chat_url in mattermost_chat_urls:
+			url = chat_url
+			json_data = {'text': message.replace("*", "**")}
+			headers_data = {'Content-Type': 'application/json'}
+			SendRequest(url, json_data, None, headers_data)
 	if slack_on:
 		for token in slack_tokens:
 			url = f"https://hooks.slack.com/services/{token}"
@@ -155,9 +161,10 @@ if __name__ == "__main__":
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on = (parsed_json[key]["ON"] for key in ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX"])
-		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"],
-			"NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"], "PUSHOVER": ["TOKENS", "USER_KEYS"], "MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"]}
+		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST"]
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on = (parsed_json[key]["ON"] for key in messaging_platforms)
+		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"],
+		"PUSHOVER": ["TOKENS", "USER_KEYS"], "MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"], "MATTERMOST": ["CHAT_URLS"]}
 		for service, keys in services.items():
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
