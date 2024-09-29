@@ -87,8 +87,8 @@ def SendMessage(message: str):
 			json_data = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
 			SendRequest(url, json_data)
 	if discord_on:
-		for token in discord_tokens:
-			url = f"https://discord.com/api/webhooks/{token}"
+		for webhook_url in discord_webhook_urls:
+			url = webhook_url
 			json_data = {"content": message.replace("*", "**")}
 			SendRequest(url, json_data)
 	if mattermost_on:
@@ -108,6 +108,12 @@ def SendMessage(message: str):
 			formated_message = "<br>".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
 			json_data = {"msgtype": "m.text", "body": formated_message, "format": "org.matrix.custom.html", "formatted_body": formated_message}
 			headers_data = {"Content-Type": "application/json"}
+			SendRequest(url, json_data, None, headers_data)
+	if rocket_on:
+		for token, server_url, user_id, channel in zip(rocket_tokens, rocket_server_urls,rocket_user_ids, rocket_channels):
+			url = f"{server_url}/api/v1/chat.postMessage"
+			headers_data = {"X-Auth-Token": token, "X-User-Id": user_id, "Content-Type": "application/json"}
+			json_data = {"channel": channel, "text": message}
 			SendRequest(url, json_data, None, headers_data)
 	
 	header, message = message.replace("*", "").split("\n", 1)
@@ -161,10 +167,10 @@ if __name__ == "__main__":
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
-		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on = (parsed_json[key]["ON"] for key in messaging_platforms)
-		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["TOKENS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"],
-		"PUSHOVER": ["TOKENS", "USER_KEYS"], "MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"], "MATTERMOST": ["CHAT_URLS"]}
+		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST", "ROCKET"]
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, rocket_on = (parsed_json[key]["ON"] for key in messaging_platforms)
+		services = {"TELEGRAM": ["TOKENS", "CHAT_IDS"], "DISCORD": ["WEBHOOK_URLS"], "SLACK": ["TOKENS"],"GOTIFY": ["TOKENS", "CHAT_URLS"], "NTFY": ["TOKENS", "CHAT_URLS"], "PUSHBULLET": ["TOKENS"],
+		"PUSHOVER": ["TOKENS", "USER_KEYS"], "MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"], "MATTERMOST": ["CHAT_URLS"], "ROCKET": ["TOKENS", "SERVER_URLS", "USER_IDS", "CHANNELS"]}
 		for service, keys in services.items():
 			if parsed_json[service]["ON"]:
 				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
