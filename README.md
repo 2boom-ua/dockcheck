@@ -21,6 +21,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
   - Ntfy
   - Pushbullet
   - Pushover
+  - Rocket.chat
   - Matrix
   - Mattermost
 - **Customizable polling interval** through a configuration file (`config.json`).
@@ -63,9 +64,9 @@ A **config.json** file in the same directory as the script, and include your API
     },
     "DISCORD": {
         "ON": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
         ]
     },
@@ -147,6 +148,29 @@ A **config.json** file in the same directory as the script, and include your API
         "CHAT_URLS": [
             "first server_url",
             "second server_url",
+            "...."
+        ]
+    },
+    "ROCKET": {
+        "ON": false,
+        "TOKENS": [
+            "first tocken",
+            "second tocken",
+            "...."
+        ],
+		"USER_IDS": [
+            "first user_id",
+            "second user_id",
+            "...."
+        ],
+        "SERVER_URLS": [
+           "first server_url",
+            "second server_url",
+            "...."
+        ],
+		"CHANNELS": [
+            "#first channel",
+            "#second channel",
             "...."
         ]
     },
