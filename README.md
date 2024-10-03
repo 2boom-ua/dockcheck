@@ -72,9 +72,9 @@ A **config.json** file in the same directory as the script, and include your API
     },
     "SLACK": {
         "ON": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
         ]
     },
@@ -93,16 +93,11 @@ A **config.json** file in the same directory as the script, and include your API
     },
     "NTFY": {
         "ON": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
-        ],
-        "CHAT_URLS": [
-            "first server_url",
-            "second server_url",
-            "...."
-        ]
+		]
     },
     "PUSHBULLET": {
         "ON": false,
@@ -145,9 +140,9 @@ A **config.json** file in the same directory as the script, and include your API
     },
     "MATTERMOST": {
         "ON": false,
-        "CHAT_URLS": [
-            "first server_url",
-            "second server_url",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
         ]
     },
@@ -168,16 +163,24 @@ A **config.json** file in the same directory as the script, and include your API
             "second server_url",
             "...."
         ],
-		"CHANNELS": [
+		"CHANNEL_IDS": [
             "#first channel",
             "#second channel",
             "...."
         ]
     },
+	"STARTUP_MESSAGE": true,
     "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
 ```
+
+| Item   | Required   | Description   |
+|------------|------------|------------|
+| STARTUP_MESSAGE | true/false | On/Off startup message. | 
+| DEFAULT_DOT_STYLE | true/false | Round/Square dots. |
+| SEC_REPEAT | 10 | Set the poll period in seconds. Minimum is 10 seconds. | 
+
 ## Running as a Linux Service
 You can set this script to run as a Linux service for continuous monitoring.
 
