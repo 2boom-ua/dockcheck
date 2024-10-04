@@ -1,0 +1,12 @@
+[Unit]
+Description=docker state change monitor
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/python3 /opt/dockcheck/dockcheck.py
+
+[Install]
+WantedBy=multi-user.target
+
