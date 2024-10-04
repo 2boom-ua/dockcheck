@@ -14,11 +14,13 @@ def getDockerInfo() -> dict:
 	"""Get Docker node name and version."""
 	try:
 		docker_client = docker.from_env()
-		node_name = docker_client.info().get('Name', "")
-		version_info = docker_client.version().get('Version', "")
-		return {"node_name": node_name, "docker_version": version_info}
+		return {
+			"node_name": docker_client.info().get('Name', ""),
+			"docker_version": docker_client.version().get('Version', "")
+		}
 	except (docker.errors.DockerException, Exception) as e:
-		return f"Error: {e}"
+		print(f"Error: {e}")
+		return {"node_name": "", "docker_version": ""}
 
 
 def getDockerResourcesCounts() -> dict:
