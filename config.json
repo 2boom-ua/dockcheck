@@ -22,9 +22,9 @@
     },
     "SLACK": {
         "ON": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
         ]
     },
@@ -43,16 +43,11 @@
     },
     "NTFY": {
         "ON": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
-        ],
-        "CHAT_URLS": [
-            "first server_url",
-            "second server_url",
-            "...."
-        ]
+		]
     },
     "PUSHBULLET": {
         "ON": false,
@@ -95,9 +90,9 @@
     },
     "MATTERMOST": {
         "ON": false,
-        "CHAT_URLS": [
-            "first server_url",
-            "second server_url",
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
             "...."
         ]
     },
@@ -118,12 +113,51 @@
             "second server_url",
             "...."
         ],
-		"CHANNELS": [
+		"CHANNEL_IDS": [
             "#first channel",
             "#second channel",
             "...."
         ]
     },
+    "FLOCK": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "PUMBLE": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "ZULIP": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "CUSTOM": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+        "STD_BOLDS" : [
+            true,
+            false,
+            "...."
+                ]
+    },
+    "STARTUP_MESSAGE": true,
+    "COMPACT_MESSAGE": false,
     "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
