@@ -24,6 +24,10 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
   - Rocket.chat
   - Matrix
   - Mattermost
+  - Zulip
+  - Pumble
+  - Flock
+  - Custom webhook
 - **Customizable polling interval** through a configuration file (`config.json`).
 - **Periodic checks** with Docker resource updates logged and reported.
 
@@ -169,7 +173,45 @@ A **config.json** file in the same directory as the script, and include your API
             "...."
         ]
     },
-	"STARTUP_MESSAGE": true,
+    "FLOCK": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "PUMBLE": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "ZULIP": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "CUSTOM": {
+        "ON": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+        "STD_BOLDS" : [
+            true,
+            false,
+            "...."
+                ]
+    },
+    "STARTUP_MESSAGE": true,
+    "COMPACT_MESSAGE": false,
     "DEFAULT_DOT_STYLE": true,
     "SEC_REPEAT": 10
 }
@@ -177,7 +219,11 @@ A **config.json** file in the same directory as the script, and include your API
 
 | Item   | Required   | Description   |
 |------------|------------|------------|
+| STD_BOLDS | true/false | "**" **standard Markdown**, "*" *non-standard Markdown*
+| | | Standard Markdown use - Pumble, Mattermost, Discord, Ntfy, Gotify |
+| | | Non-standard Markdown use - Telegram, Zulip, Flock, Slack, RocketChat, Flock. |
 | STARTUP_MESSAGE | true/false | On/Off startup message. | 
+| COMPACT_MESSAGE | true/false | On/Off compact format message. | 
 | DEFAULT_DOT_STYLE | true/false | Round/Square dots. |
 | SEC_REPEAT | 10 | Set the poll period in seconds. Minimum is 10 seconds. | 
 
