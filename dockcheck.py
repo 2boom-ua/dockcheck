@@ -23,19 +23,25 @@ def getDockerInfo() -> dict:
 		return {"node_name": "", "docker_version": ""}
 
 
-def getDockerResourcesCounts() -> dict:
-	"""Get the count of Docker resources: volumes, images, networks, and containers."""
+def getDockerResourcesCounts(stacks_on: bool, containers_on: bool, images_on: bool, networks_on: bool, volumes_on: bool) -> dict:
+	resources = {"stacks": 0, "containers": 0, "networks": 0, "volumes": 0, "images": 0}
 	try:
 		docker_client = docker.from_env()
-		return {
-			"volumes": len(docker_client.volumes.list()),
-			"images": len(docker_client.images.list()),
-			"networks": len(docker_client.networks.list()),
-			"containers": len(docker_client.containers.list())
-		}
+		containers = docker_client.containers.list()
+		compose_projects = {c.labels.get('com.docker.compose.project') for c in containers if c.labels.get('com.docker.compose.project')}
+		if stacks_on:
+			resources["stacks"] = len(compose_projects)
+		if containers_on:
+			resources["containers"] = len(containers)
+		if images_on:
+			resources["images"] = len(docker_client.images.list())
+		if networks_on:
+			resources["networks"] = len(docker_client.networks.list())
+		if volumes_on:
+			resources["volumes"] = len(docker_client.volumes.list())
 	except (docker.errors.DockerException, Exception) as e:
 		print(f"Error: {e}")
-		return {"volumes": 0, "images": 0, "networks": 0, "containers": 0}
+	return resources
 
 
 def getDockerData(data_type: str) -> tuple:
@@ -66,6 +72,14 @@ def getDockerData(data_type: str) -> tuple:
 				health_status = container_info.get("State", {}).get("Health", {}).get("Status")
 				status = health_status if health_status else container_info["State"]["Status"]
 				resource_data.append(f"{container.name} {container.status} {status} {container.short_id}")
+		elif data_type == "stacks":
+			containers = docker_client.containers.list()
+			for container in containers:
+				labels = container.labels
+				stack_name = labels.get('com.docker.compose.project')
+				stack_hash = labels.get('com.docker.compose.config-hash') 
+				if stack_name:
+					resource_data.append(f"{stack_name} {stack_hash}")
 		else:
 			volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
 			if volumes: [resource_data.append(f"{volume.short_id}") for volume in volumes]
@@ -161,27 +175,24 @@ if __name__ == "__main__":
 	docker_info = getDockerInfo()
 	node_name = docker_info['node_name']
 	current_path = os.path.dirname(os.path.realpath(__file__))
-	docker_data_types = ["containers", "networks", "volumes", "images", "uvolumes", "unetworks"]
-	old_list_containers, old_list_networks, old_list_volumes, old_list_images, old_list_uvolumes, old_list_unetworks = [getDockerData(data_type) for data_type in docker_data_types]
 	unused_id_name = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
 	square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
-	monitoring_mg = ""
-	docker_counts = getDockerResourcesCounts()
+	monitoring_message = ""
 	header_message = f"*{node_name}* (docker.check)\n- docker version: {docker_info['docker_version']},\n"
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
-			parsed_json = json.loads(file.read())
-		sec_repeat = int(parsed_json["SEC_REPEAT"])
-		if sec_repeat < 10: sec_repeat = 10
-		startup_message = parsed_json["STARTUP_MESSAGE"]
-		default_dot_style = parsed_json["DEFAULT_DOT_STYLE"]
-		compact_format = parsed_json["COMPACT_MESSAGE"]
+			config_json = json.loads(file.read())
+		sec_repeat = max(int(config_json.get("SEC_REPEAT", 10)), 10)
+		monitoring_resources = config_json["MONITORING_RESOURCES"]
+		startup_message = config_json["STARTUP_MESSAGE"]
+		default_dot_style = config_json["DEFAULT_DOT_STYLE"]
+		compact_format = config_json["COMPACT_MESSAGE"]
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST", "PUMBLE", "ROCKET", "ZULIP", "FLOCK", "CUSTOM"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, pumble_on, rocket_on, zulip_on, flock_on, custom_on = (parsed_json[key]["ON"] for key in messaging_platforms)
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, pumble_on, rocket_on, zulip_on, flock_on, custom_on = (config_json[key]["ENABLED"] for key in messaging_platforms)
 		services = {
 			"TELEGRAM": ["TOKENS", "CHAT_IDS"],
 			"DISCORD": ["WEBHOOK_URLS"],
@@ -199,161 +210,203 @@ if __name__ == "__main__":
 			"CUSTOM": ["WEBHOOK_URLS", "STD_BOLDS"]
 		}
 		for service, keys in services.items():
-			if parsed_json[service]["ON"]:
-				globals().update({f"{service.lower()}_{key.lower()}": parsed_json[service][key] for key in keys})
-				monitoring_mg += f"- messaging: {service.capitalize()},\n"
-		monitoring_mg += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items())
-		monitoring_mg += f"- polling period: {sec_repeat} seconds,\n- startup message: {startup_message},\n- compact message: {compact_format},\n- default dot style: {default_dot_style}."
+			if config_json[service]["ENABLED"]:
+				globals().update({f"{service.lower()}_{key.lower()}": config_json[service][key] for key in keys})
+				monitoring_message += f"- messaging: {service.capitalize()},\n"
+		stacks_on, containers_on, networks_on, volumes_on, images_on = (monitoring_resources[key] for key in ["STACKS", "CONTAINERS", "NETWORKS", "VOLUMES", "IMAGES"])
+		old_list_stacks = old_list_containers = old_list_images = old_list_networks = old_list_volumes = old_list_uvolumes = old_list_unetworks = []
+		data_sources = {
+			"stacks": stacks_on,
+			"containers": containers_on,
+			"images": images_on,
+			"networks": networks_on,
+			"volumes": volumes_on,
+			"uvolumes": volumes_on,
+			"unetworks": networks_on
+		}
+		for resource, condition in data_sources.items():
+			if condition:
+				globals()[f"old_list_{resource}"] = getDockerData(resource)
+		docker_counts = getDockerResourcesCounts(stacks_on, containers_on, images_on, networks_on, volumes_on)
+		monitoring_message += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items() if count != 0)
+		monitoring_message += (
+			f"- polling period: {sec_repeat} seconds,\n"
+			f"- startup message: {startup_message},\n"
+			f"- compact message: {compact_format},\n"
+			f"- default dot style: {default_dot_style}."
+		)
 		if startup_message:
-			SendMessage(f"{header_message}{monitoring_mg}")
+			SendMessage(f"{header_message}{monitoring_message}")
 	else:
 		print("config.json not found")
 
 
-"""Periodically check for changes in Docker resources"""
+"""Periodically check for changes in Docker monitoring resources"""
 @repeat(every(sec_repeat).seconds)
 def DockerChecker():
 	"""Check for changes in Docker images"""
-	global old_list_images, unused_id_name
-	status_dot, status_message = yellow_dot, "pulled"
-	message, header_message = "", f"*{node_name}* (docker.images)\n"
-	list_images = result = []
-	list_images = getDockerData("images")
-	if list_images:
-		if not old_list_images: old_list_images = list_images
-		if len(list_images) >= len(old_list_images):
-			result = [image for image in list_images if image not in old_list_images]
-		else:
-			result = [image for image in old_list_images if image not in list_images]
-			status_dot, status_message = red_dot, "removed"
-		if result:
-			old_images_str = ",".join(old_list_images)
-			for image in result:
-				img_parts = image.split()
-				image_id, image_name = img_parts[0], img_parts[-1]
-				if image_id == image_name:
-					if image_id in old_images_str and status_dot != red_dot:
-						status_message, status_dot = "unused", orange_dot
-					if image_id in "".join(unused_id_name) and not compact_format:
-						for unsed_image in unused_id_name:
-							if image_id in unsed_image:
-								parts_unused = unsed_image.split()
-								image_unsed_name, image_unsed_id = parts_unused[0], parts_unused[-1]
-								message += f"{status_dot} *{image_unsed_name}* ({image_unsed_id}): {status_message}!\n"
-								unused_id_name.remove(unsed_image)
-					else:
-						message += f"{status_dot} *{image_name}*: {status_message}!\n"
-					if status_dot == orange_dot: status_dot = yellow_dot
-				else:
-					message += f"{status_dot} *{image_name}*{'' if compact_format else f' ({image_id})'}: {status_message}!\n"
-
-				if status_dot == yellow_dot: status_message = "pulled"
-			old_list_images = list_images
-			message = "\n".join(sorted(message.splitlines()))
-			if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]) and not compact_format:
-				new_message = []
-				message = message.split('\n')
-				half_length = len(message) // 2
-				for i in range (half_length):
-					tmp_message = f"{message[i]} {message[i + half_length]}"
-					parts_message = tmp_message.split()
-					unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4].strip('*')
-					replace_name = f"*{name_image}* ({unused_id}):"
-					unused_id_name.append(f"{name_image} {unused_id}")
-					parts_message[1] = replace_name
-					new_message.append(" ".join(parts_message))
-				message = " ".join(new_message).replace('! ', '!\n')
-			SendMessage(f"{header_message}{message}")
-
-	"""Check for changes in Docker networks and volumes"""
-	check_types = ["volumes", "networks"]
-	global old_list_networks, old_list_volumes
-	for check_type in check_types:
-		status_dot, status_message = yellow_dot, "created"
-		message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
-		new_list = old_list = result = []
-		old_list = old_list_volumes if check_type == "volumes" else old_list_networks
-		new_list = getDockerData(check_type)
-		if new_list:
-			if not old_list: old_list = new_list
-			if len(new_list) >= len(old_list):
-				result = [item for item in new_list if item not in old_list]
+	if images_on:
+		global old_list_images, unused_id_name
+		status_dot, status_message = yellow_dot, "pulled"
+		message, header_message = "", f"*{node_name}* (docker.images)\n"
+		list_images = result = []
+		list_images = getDockerData("images")
+		if list_images:
+			if not old_list_images: old_list_images = list_images
+			if len(list_images) >= len(old_list_images):
+				result = [image for image in list_images if image not in old_list_images]
 			else:
-				result = [item for item in old_list if item not in new_list]
+				result = [image for image in old_list_images if image not in list_images]
 				status_dot, status_message = red_dot, "removed"
-			if check_type == "volumes":
-				old_list_volumes = new_list
-			else:
-				old_list_networks = new_list
 			if result:
-				for item in result:
-					message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+				old_images_str = ",".join(old_list_images)
+				for image in result:
+					img_parts = image.split()
+					image_id, image_name = img_parts[0], img_parts[-1]
+					if image_id == image_name:
+						if image_id in old_images_str and status_dot != red_dot:
+							status_message, status_dot = "unused", orange_dot
+						if image_id in "".join(unused_id_name) and not compact_format:
+							for unsed_image in unused_id_name:
+								if image_id in unsed_image:
+									parts_unused = unsed_image.split()
+									image_unsed_name, image_unsed_id = parts_unused[0], parts_unused[-1]
+									message += f"{status_dot} *{image_unsed_name}* ({image_unsed_id}): {status_message}!\n"
+									unused_id_name.remove(unsed_image)
+						else:
+							message += f"{status_dot} *{image_name}*: {status_message}!\n"
+						if status_dot == orange_dot: status_dot = yellow_dot
+					else:
+						message += f"{status_dot} *{image_name}*{'' if compact_format else f' ({image_id})'}: {status_message}!\n"
+					if status_dot == yellow_dot: status_message = "pulled"
+				old_list_images = list_images
 				message = "\n".join(sorted(message.splitlines()))
+				if all(keyword in message for keyword in [orange_dot, yellow_dot, "unused!", "pulled!"]) and not compact_format:
+					new_message = []
+					message = message.split('\n')
+					half_length = len(message) // 2
+					for i in range (half_length):
+						tmp_message = f"{message[i]} {message[i + half_length]}"
+						parts_message = tmp_message.split()
+						unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4].strip('*')
+						replace_name = f"*{name_image}* ({unused_id}):"
+						unused_id_name.append(f"{name_image} {unused_id}")
+						parts_message[1] = replace_name
+						new_message.append(" ".join(parts_message))
+					message = " ".join(new_message).replace('! ', '!\n')
 				SendMessage(f"{header_message}{message}")
 
-	"""Check for changes in Docker unused networks and volumes"""
-	check_types = ["volumes", "networks"]
-	global old_list_uvolumes, old_list_unetworks
-	for check_type in check_types:
-		status_dot, status_message = orange_dot, "unused"
-		message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
-		new_list = old_list = result = []
-		old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
-		new_list = getDockerData(f"u{check_type}")
-		if new_list:
-			if len(new_list) >= len(old_list):
-				result = [item for item in new_list if item not in old_list]
-			if check_type == "volumes":
-				old_list_uvolumes = new_list
-			else:
-				old_list_unetworks = new_list
+	"""Check for changes in Docker networks and volumes"""
+	if networks_on or volumes_on:
+		check_types = ["networks" if networks_on else None, "volumes" if volumes_on else None]
+		check_types = [check for check in check_types if check]
+		global old_list_networks, old_list_volumes
+		for check_type in check_types:
+			status_dot, status_message = yellow_dot, "created"
+			message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
+			new_list = old_list = result = []
+			old_list = old_list_volumes if check_type == "volumes" else old_list_networks
+			new_list = getDockerData(check_type)
+			if new_list:
+				if not old_list: old_list = new_list
+				if len(new_list) >= len(old_list):
+					result = [item for item in new_list if item not in old_list]
+				else:
+					result = [item for item in old_list if item not in new_list]
+					status_dot, status_message = red_dot, "removed"
+				if check_type == "volumes":
+					old_list_volumes = new_list
+				else:
+					old_list_networks = new_list
+				if result:
+					for item in result:
+						message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+					message = "\n".join(sorted(message.splitlines()))
+					SendMessage(f"{header_message}{message}")
+	
+		"""Check for changes in Docker unused networks and volumes"""
+		global old_list_uvolumes, old_list_unetworks
+		for check_type in check_types:
+			status_dot, status_message = orange_dot, "unused"
+			message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
+			new_list = old_list = result = []
+			old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
+			new_list = getDockerData(f"u{check_type}")
+			if new_list:
+				if len(new_list) >= len(old_list):
+					result = [item for item in new_list if item not in old_list]
+				if check_type == "volumes":
+					old_list_uvolumes = new_list
+				else:
+					old_list_unetworks = new_list
+				if result:
+					for item in result:
+						message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+					message = "\n".join(sorted(message.splitlines()))
+					SendMessage(f"{header_message}{message}")
+				
+	"""Check for changes in Docker stacks"""
+	if stacks_on:
+		global old_list_stacks
+		status_dot, status_message = orange_dot, "changed"
+		message, header_message = "", f"*{node_name}* (docker.stacks)\n"
+		list_stacks = result = []
+		list_stacks = getDockerData("stacks")
+		if list_stacks:
+			if not old_list_stacks:
+				old_list_stacks = list_stacks
+			if len(list_stacks) == len(old_list_stacks):
+				result = [item for item in list_stacks if item not in old_list_stacks]
 			if result:
-				for item in result:
-					message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+				old_list_stacks = list_stacks
+				for stack in result:
+					stack_name, stack_hash = stack.split()
+					message += f"{status_dot} *{stack_name}*{'' if compact_format else f' ({stack_hash[:12]})'}: {status_message}!\n"
 				message = "\n".join(sorted(message.splitlines()))
 				SendMessage(f"{header_message}{message}")
 
 	"""Check for changes in Docker containers"""
-	global old_list_containers
-	status_dot = orange_dot
-	message, header_message = "", f"*{node_name}* (docker.containers)\n"
-	list_containers = result = []
-	stopped = False
-	container_name, container_attr, container_id, container_status = "", "", "", "inactive"
-	list_containers = getDockerData("containers")
-	if list_containers:
-		if not old_list_containers:
-			old_list_containers = list_containers
-		if len(list_containers) >= len(old_list_containers):
-			result = [item for item in list_containers if item not in old_list_containers]
-		else:
-			result = [item for item in old_list_containers if item not in list_containers]
-			stopped = True
-		if result:
-			old_list_containers = list_containers
-			for container in result:
-				container_info = "".join(container).split()
-				container_name = container_info[0]
-				if container_name:
-					container_attr = container_info[2]
-					container_id = container_info[-1]
-					if container_attr != "starting":
-						if not stopped: container_status = container_info[1]
-						if container_status == "running":
-							status_dot = green_dot
-							if container_attr != container_status:
-								container_status = f"{container_attr}"
-							if container_attr == "unhealthy":
-								status_dot = orange_dot
-						elif container_status == "created":
-							status_dot = yellow_dot
-						elif container_status == "inactive":
-							status_dot = red_dot
-						message += f"{status_dot} *{container_name}*{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
-				status_dot = orange_dot
-			if message:
-				message = "\n".join(sorted(message.splitlines()))
-				SendMessage(f"{header_message}{message}")
+	if containers_on:
+		global old_list_containers
+		status_dot = orange_dot
+		message, header_message = "", f"*{node_name}* (docker.containers)\n"
+		list_containers = result = []
+		stopped = False
+		container_name, container_attr, container_id, container_status = "", "", "", "inactive"
+		list_containers = getDockerData("containers")
+		if list_containers:
+			if not old_list_containers:
+				old_list_containers = list_containers
+			if len(list_containers) >= len(old_list_containers):
+				result = [item for item in list_containers if item not in old_list_containers]
+			else:
+				result = [item for item in old_list_containers if item not in list_containers]
+				stopped = True
+			if result:
+				old_list_containers = list_containers
+				for container in result:
+					container_info = "".join(container).split()
+					container_name = container_info[0]
+					if container_name:
+						container_attr = container_info[2]
+						container_id = container_info[-1]
+						if container_attr != "starting":
+							if not stopped: container_status = container_info[1]
+							if container_status == "running":
+								status_dot = green_dot
+								if container_attr != container_status:
+									container_status = f"{container_attr}"
+								if container_attr == "unhealthy":
+									status_dot = orange_dot
+							elif container_status == "created":
+								status_dot = yellow_dot
+							elif container_status == "inactive":
+								status_dot = red_dot
+							message += f"{status_dot} *{container_name}*{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
+					status_dot = orange_dot
+				if message:
+					message = "\n".join(sorted(message.splitlines()))
+					SendMessage(f"{header_message}{message}")
 
 while True:
 	run_pending()
