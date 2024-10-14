@@ -156,6 +156,13 @@
             "...."
                 ]
     },
+    "MONITORING_RESOURCES": {
+        "STACKS": true,
+        "CONTAINERS": true,
+        "NETWORKS": true,
+        "VOLUMES": true,
+        "IMAGES": true
+    },
     "STARTUP_MESSAGE": true,
     "COMPACT_MESSAGE": false,
     "DEFAULT_DOT_STYLE": true,
