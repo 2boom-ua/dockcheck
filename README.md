@@ -229,13 +229,15 @@ A **config.json** file in the same directory as the script, and include your API
 |------------|------------|------------|
 | STD_BOLDS | true/false | "**" **standard Markdown**, "*" *non-standard Markdown* |
 | | | Standard Markdown use - Pumble, Mattermost, Discord, Ntfy, Gotify |
-| | | Non-standard Markdown use - Telegram, Zulip, Flock, Slack, RocketChat, Flock. |
+| | | Non-standard Markdown use - Telegram, Zulip, Slack, RocketChat, Flock. |
+| | | |
 | MONITORING_RESOURCES | | |
 | STACKS | true/false | monitoring docker stacks changes. | 
 | CONTAINERS | true/false | monitoring docker containers changes. | 
 | NETWORKS | true/false | monitoring docker nwtworks changes. | 
 | VOLUMES | true/false | monitoring docker volumes changes. | 
-| IMAGES | true/false | monitoring docker images changes. | 
+| IMAGES | true/false | monitoring docker images changes. |
+| | | |
 | STARTUP_MESSAGE | true/false | On/Off startup message. | 
 | COMPACT_MESSAGE | true/false | On/Off compact format message. | 
 | DEFAULT_DOT_STYLE | true/false | Round/Square dots. |
