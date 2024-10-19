@@ -153,7 +153,6 @@ def SendMessage(message: str):
 			SendRequest(url, json_data)
 	if apprise_on:
 		for url in apprise_webhook_urls:
-			url = f"{url}?format=markdown"
 			headers_data = {"Content-Type": "application/json"}
 			json_data = {"body": message.replace("*", "**"), "type": "info"}
 			SendRequest(url, json_data, None, headers_data)
