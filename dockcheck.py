@@ -98,6 +98,14 @@ def SendMessage(message: str):
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
+			
+	def toHTMLformat(message: str) -> str:
+		"""Format the message with bold text and HTML line breaks."""
+		html_message = ""
+		for i, string in enumerate(message.split('*')):
+			html_message += f"<b>{string}</b>" if i % 2 else string
+		html_message = html_message.replace("\n", "<br>")
+		return html_message
 
 	if telegram_on:
 		for token, chat_id in zip(telegram_tokens, telegram_chat_ids):
@@ -128,8 +136,8 @@ def SendMessage(message: str):
 	if matrix_on:
 		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
 			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
-			matrix_message = "<br>".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
-			json_data = {"msgtype": "m.text", "body": matrix_message, "format": "org.matrix.custom.html", "formatted_body": matrix_message}
+			html_message = toHTMLformat(message)
+			json_data = {"msgtype": "m.text", "body": html_message, "format": "org.matrix.custom.html", "formatted_body": html_message}
 			SendRequest(url, json_data)
 	if discord_on:
 		for url in discord_webhook_urls:
@@ -143,6 +151,12 @@ def SendMessage(message: str):
 		for url in pumble_webhook_urls:
 			json_data = {"text": message.replace("*", "**")}
 			SendRequest(url, json_data)
+	if apprise_on:
+		for url in apprise_webhook_urls:
+			url = f"{url}?format=markdown"
+			headers_data = {"Content-Type": "application/json"}
+			json_data = {"body": message.replace("*", "**"), "type": "info"}
+			SendRequest(url, json_data, None, headers_data)
 	if ntfy_on:
 		for url in ntfy_webhook_urls:
 			headers_data = {"Markdown": "yes"}
@@ -159,8 +173,8 @@ def SendMessage(message: str):
 	if pushover_on:
 		for token, user_key in zip(pushover_tokens, pushover_user_keys):
 			url = "https://api.pushover.net/1/messages.json"
-			pushover_message = "\n".join(string.replace('*', '<b>', 1).replace('*', '</b>', 1) for string in message.split("\n"))
-			json_data = {"token": token, "user": user_key, "message": pushover_message, "title": header.replace("*", ""), "html": "1"}
+			html_message = toHTMLformat(message)
+			json_data = {"token": token, "user": user_key, "message": html_message, "title": header.replace("*", ""), "html": "1"}
 			SendRequest(url, json_data)
 	if pushbullet_on:
 		for token in pushbullet_tokens:
@@ -191,8 +205,8 @@ if __name__ == "__main__":
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
-		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST", "PUMBLE", "ROCKET", "ZULIP", "FLOCK", "CUSTOM"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, pumble_on, rocket_on, zulip_on, flock_on, custom_on = (config_json[key]["ENABLED"] for key in messaging_platforms)
+		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST", "PUMBLE", "ROCKET", "ZULIP", "FLOCK", "APPRISE", "CUSTOM"]
+		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, pumble_on, rocket_on, zulip_on, flock_on, apprise_on, custom_on = (config_json[key]["ENABLED"] for key in messaging_platforms)
 		services = {
 			"TELEGRAM": ["TOKENS", "CHAT_IDS"],
 			"DISCORD": ["WEBHOOK_URLS"],
@@ -207,6 +221,7 @@ if __name__ == "__main__":
 			"ROCKET": ["WEBHOOK_URLS"],
 			"ZULIP": ["WEBHOOK_URLS"],
 			"FLOCK": ["WEBHOOK_URLS"],
+			"APPRISE": ["WEBHOOK_URLS"],
 			"CUSTOM": ["WEBHOOK_URLS", "STD_BOLDS"]
 		}
 		for service, keys in services.items():
