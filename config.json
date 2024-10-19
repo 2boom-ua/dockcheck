@@ -1,6 +1,6 @@
 {
     "TELEGRAM": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -13,7 +13,7 @@
         ]
     },
     "DISCORD": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -21,7 +21,7 @@
         ]
     },
     "SLACK": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -29,7 +29,7 @@
         ]
     },
     "GOTIFY": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -42,7 +42,7 @@
         ]
     },
     "NTFY": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -50,7 +50,7 @@
 		]
     },
     "PUSHBULLET": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -58,7 +58,7 @@
         ]
     },
     "PUSHOVER": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -71,7 +71,7 @@
         ]
     },
     "MATRIX": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -89,7 +89,7 @@
         ]
     },
     "MATTERMOST": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -97,7 +97,7 @@
         ]
     },
     "ROCKET": {
-        "ON": false,
+        "ENABLED": false,
         "TOKENS": [
             "first tocken",
             "second tocken",
@@ -120,7 +120,7 @@
         ]
     },
     "FLOCK": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -128,7 +128,7 @@
 		]
     },
     "PUMBLE": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -136,7 +136,15 @@
 		]
     },
     "ZULIP": {
-        "ON": false,
+        "ENABLED": false,
+        "WEBHOOK_URLS": [
+            "first url",
+            "second url",
+            "...."
+		]
+    },
+    "APPRISE": {
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
@@ -144,7 +152,7 @@
 		]
     },
     "CUSTOM": {
-        "ON": false,
+        "ENABLED": false,
         "WEBHOOK_URLS": [
             "first url",
             "second url",
