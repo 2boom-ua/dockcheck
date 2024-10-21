@@ -149,7 +149,10 @@
             "first url",
             "second url",
             "...."
-		]
+        ],
+        "FORMATS": [
+            "markdown"
+        ]
     },
     "CUSTOM": {
         "ENABLED": false,
@@ -157,12 +160,16 @@
             "first url",
             "second url",
             "...."
-		]
-        "STD_BOLDS" : [
-            true,
-            false,
-            "...."
-                ]
+        ]
+        "CONTENT_NAMES": [
+            "text",
+            "body",
+        "...."
+        ],
+        "FORMATS": [
+            "asterisk",
+            "markdown"
+        ]
     },
     "MONITORING_RESOURCES": {
         "STACKS": true,
