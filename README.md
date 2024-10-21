@@ -205,7 +205,10 @@ A **config.json** file in the same directory as the script, and include your API
             "first url",
             "second url",
             "...."
-		]
+        ],
+        "FORMATS": [
+            "markdown"
+        ]
     },
     "CUSTOM": {
         "ENABLED": false,
@@ -213,12 +216,16 @@ A **config.json** file in the same directory as the script, and include your API
             "first url",
             "second url",
             "...."
-		]
-        "STD_BOLDS" : [
-            true,
-            false,
-            "...."
-                ]
+        ]
+        "CONTENT_NAMES": [
+            "text",
+            "body",
+        "...."
+        ],
+        "FORMATS": [
+            "asterisk",
+            "markdown"
+        ]
     },
     "MONITORING_RESOURCES": {
         "STACKS": true,
@@ -236,9 +243,12 @@ A **config.json** file in the same directory as the script, and include your API
 
 | Item   | Required   | Description   |
 |------------|------------|------------|
-| STD_BOLDS | true/false | "**" **standard Markdown**, "*" *non-standard Markdown* |
-| | | Standard Markdown use - Pumble, Mattermost, Discord, Ntfy, Gotify |
-| | | Non-standard Markdown use - Telegram, Zulip, Slack, RocketChat, Flock. |
+| CONTENT_NAMES | text/body/content/message | json = {"text/body/content/message": out_message} |
+||||
+| FORMATS |markdown/html/text/asterisk | markdown - a simple text-based format with lightweight syntax for basic styling (Pumble, Mattermost, Discord, Ntfy, Gotify), |
+||| html - a web-based format using tags for advanced text styling, |
+||| text - raw text without any styling or formatting. |
+||| asterisk - non-standard Markdown (Telegram, Zulip, Flock, Slack, RocketChat).|
 | | | |
 | MONITORING_RESOURCES | | |
 | STACKS | true/false | monitoring docker stacks changes. | 
