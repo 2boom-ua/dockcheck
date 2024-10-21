@@ -101,11 +101,11 @@ def SendMessage(message: str):
 			
 	def toHTMLformat(message: str) -> str:
 		"""Format the message with bold text and HTML line breaks."""
-		html_message = ""
+		formatted_message = ""
 		for i, string in enumerate(message.split('*')):
-			html_message += f"<b>{string}</b>" if i % 2 else string
-		html_message = html_message.replace("\n", "<br>")
-		return html_message
+			formatted_message += f"<b>{string}</b>" if i % 2 else string
+		formatted_message = formatted_message.replace("\n", "<br>")
+		return formatted_message
 
 	if telegram_on:
 		for token, chat_id in zip(telegram_tokens, telegram_chat_ids):
@@ -128,57 +128,79 @@ def SendMessage(message: str):
 		for url in flock_webhook_urls:
 			json_data = {"text": message}
 			SendRequest(url, json_data)
-	if custom_on:
-		for url, std_bold in zip(custom_webhook_urls, custom_std_bolds):
-			bold_markdown = "**" if std_bold else "*"
-			json_data = {"text": message.replace("*", bold_markdown)}
-			SendRequest(url, json_data)
 	if matrix_on:
 		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
 			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
-			html_message = toHTMLformat(message)
-			json_data = {"msgtype": "m.text", "body": html_message, "format": "org.matrix.custom.html", "formatted_body": html_message}
+			formatted_message = toHTMLformat(message)
+			json_data = {"msgtype": "m.text", "body": formatted_message, "format": "org.matrix.custom.html", "formatted_body": formatted_message}
 			SendRequest(url, json_data)
 	if discord_on:
 		for url in discord_webhook_urls:
-			json_data = {"content": message.replace("*", "**")}
+			formatted_message = message.replace("*", "**")
+			json_data = {"content": formatted_message}
 			SendRequest(url, json_data)
 	if mattermost_on:
 		for url in mattermost_webhook_urls:
-			json_data = {'text': message.replace("*", "**")}
+			formatted_message = message.replace("*", "**")
+			json_data = {'text': formatted_message}
 			SendRequest(url, json_data)
 	if pumble_on:
 		for url in pumble_webhook_urls:
-			json_data = {"text": message.replace("*", "**")}
+			formatted_message = message.replace("*", "**")
+			json_data = {"text": formatted_message}
 			SendRequest(url, json_data)
 	if apprise_on:
-		for url in apprise_webhook_urls:
+		for url, mformat in zip(apprise_webhook_urls, apprise_formats):
+			"""apprise_formats - markdown/html/text."""
 			headers_data = {"Content-Type": "application/json"}
-			json_data = {"body": message.replace("*", "**"), "type": "info"}
+			formatters = {
+				"markdown": lambda msg: msg.replace("*", "**"),
+				"html": toHTMLformat,
+				"text": lambda msg: msg.replace("*", ""),
+			}
+			formatted_message = formatters.get(mformat, lambda msg: msg)(message)
+			json_data = {"body": formatted_message, "type": "info", "format": mformat}
 			SendRequest(url, json_data, None, headers_data)
+	if custom_on:
+		for url, content_name, mformat in zip(custom_webhook_urls, custom_content_names, custom_formats):
+			"""custom_name - text/body/content/message/..., custom_format - markdown/html/text/asterisk(non standard markdown - default)."""
+			formatters = {
+				"markdown": lambda msg: msg.replace("*", "**"),
+				"html": toHTMLformat,
+				"text": lambda msg: msg.replace("*", ""),
+			}
+			formatted_message = formatters.get(mformat, lambda msg: msg)(message)
+			json_data[content_name] = formatted_message
+			SendRequest(url, json_data)
 	if ntfy_on:
 		for url in ntfy_webhook_urls:
 			headers_data = {"Markdown": "yes"}
-			SendRequest(url, None, message.replace("*", "**").encode(encoding = "utf-8"), headers_data)
-
+			formatted_message = message.replace("*", "**").encode(encoding = "utf-8")
+			SendRequest(url, None, formatted_message, headers_data)
+	
 	header, message = message.split("\n", 1)
 	message = message.strip()
 
 	if gotify_on:
 		for token, server_url in zip(gotify_tokens, gotify_server_urls):
 			url = f"{server_url}/message?token={token}"
-			json_data = {'title': header.replace("*", ""), "message": message.replace("*", "**").replace("\n", "\n\n"), "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}}
+			formatted_message = message.replace("*", "**").replace("\n", "\n\n")
+			formatted_header = header.replace("*", "")
+			json_data = {'title': formatted_header, "message": formatted_message, "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}}
 			SendRequest(url, json_data)
 	if pushover_on:
 		for token, user_key in zip(pushover_tokens, pushover_user_keys):
 			url = "https://api.pushover.net/1/messages.json"
-			html_message = toHTMLformat(message)
-			json_data = {"token": token, "user": user_key, "message": html_message, "title": header.replace("*", ""), "html": "1"}
+			formatted_message = toHTMLformat(message)
+			formatted_header = header.replace("*", "")
+			json_data = {"token": token, "user": user_key, "message": formatted_message, "title": formatted_header, "html": "1"}
 			SendRequest(url, json_data)
 	if pushbullet_on:
 		for token in pushbullet_tokens:
 			url = "https://api.pushbullet.com/v2/pushes"
-			json_data = {'type': 'note', 'title': header.replace("*", ""), 'body': message.replace("*", "")}
+			formatted_header = header.replace("*", "")
+			formatted_message = message.replace("*", "")
+			json_data = {'type': 'note', 'title': formatted_header, 'body': formatted_message}
 			headers_data = {'Access-Token': token, 'Content-Type': 'application/json'}
 			SendRequest(url, json_data, None, headers_data)
 
@@ -220,8 +242,8 @@ if __name__ == "__main__":
 			"ROCKET": ["WEBHOOK_URLS"],
 			"ZULIP": ["WEBHOOK_URLS"],
 			"FLOCK": ["WEBHOOK_URLS"],
-			"APPRISE": ["WEBHOOK_URLS"],
-			"CUSTOM": ["WEBHOOK_URLS", "STD_BOLDS"]
+			"APPRISE": ["WEBHOOK_URLS", "FORMATS"],
+			"CUSTOM": ["WEBHOOK_URLS", "CONTENT_NAMES", "FORMATS"]
 		}
 		for service, keys in services.items():
 			if config_json[service]["ENABLED"]:
