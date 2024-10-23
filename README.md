@@ -7,6 +7,8 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 </div>
 
 
+*The idea for this software was inspired by* [petersem/monocker](https://github.com/petersem/monocker)
+
 ### Features
 
 - **Monitors Docker resources:**
