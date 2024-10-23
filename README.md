@@ -276,7 +276,7 @@ A **config.json** file in the same directory as the script, and include your API
 | **MATRIX** | | |
 | ENABLED | true/false | Enable or disable Matrix notifications |
 | TOKENS | String | The token for your Matrix application |
-| SERVER_URLS | url | The URL of your Matrix server |
+| SERVER_URLS | url | The URL of your Matrix server  (or use https://matrix.org) |
 ||||
 | **MATTERMOST** | | |
 | ENABLED | true/false | Enable or disable Mattermost notifications |
@@ -303,13 +303,13 @@ A **config.json** file in the same directory as the script, and include your API
 | **APPRISE** | | |
 | ENABLED | true/false | Enable or disable Apprise notifications |
 | WEBHOOK_URLS | url | The URL of your Apprise webhook |
-| FORMATS | markdown/html/text/asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
+| FORMATS | markdown,<br>html,<br>text,<br>asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
 ||||
 | **CUSTOM** | | |
 | ENABLED | true/false | Enable or disable Custom notifications |
 | WEBHOOK_URLS | url | The URL of your Custom webhook |
-| FORMATS | markdown/html/text/asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
-| CONTENT_NAMES | text/body/content/message | json = {"text/body/content/message": out_message} |
+| FORMATS | markdown,<br>html,<br>text,<br>asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
+| CONTENT_NAMES | text,<br>body,<br>content,<br>message | json = {"text/body/content/message": out_message} |
 
 - **markdown** - a simple text-based format with lightweight syntax for basic styling (Pumble, Mattermost, Discord, Ntfy, Gotify),
 - **html** - a web-based format using tags for advanced text styling,
