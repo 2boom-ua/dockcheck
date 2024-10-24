@@ -179,7 +179,6 @@ def SendMessage(message: str):
 			SendRequest(url, None, formatted_message, headers_data)
 	
 	header, message = message.split("\n", 1)
-	message = message.strip()
 
 	if gotify_on:
 		for token, server_url in zip(gotify_tokens, gotify_server_urls):
