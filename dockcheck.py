@@ -212,8 +212,8 @@ if __name__ == "__main__":
 	unused_id_name = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
 	square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
-	monitoring_message = ""
-	header_message = f"*{node_name}* (docker.check)\n- docker version: {docker_info['docker_version']},\n"
+	header_message = f"*{node_name}* (.dockcheck)\n"
+	monitoring_message = f"- docker version: {docker_info['docker_version']},\n"
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
 			config_json = json.loads(file.read())
@@ -283,7 +283,7 @@ def DockerChecker():
 	if images_on:
 		global old_list_images, unused_id_name
 		status_dot, status_message = yellow_dot, "pulled"
-		message, header_message = "", f"*{node_name}* (docker.images)\n"
+		message, header_message = "", f"*{node_name}* (.images)\n"
 		list_images = result = []
 		list_images = getDockerData("images")
 		if list_images:
@@ -338,7 +338,7 @@ def DockerChecker():
 		global old_list_networks, old_list_volumes
 		for check_type in check_types:
 			status_dot, status_message = yellow_dot, "created"
-			message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
+			message, header_message = "", f"*{node_name}* (.{check_type})\n"
 			new_list = old_list = result = []
 			old_list = old_list_volumes if check_type == "volumes" else old_list_networks
 			new_list = getDockerData(check_type)
@@ -355,7 +355,9 @@ def DockerChecker():
 					old_list_networks = new_list
 				if result:
 					for item in result:
-						message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+						item_name = item.split()[0]
+						item_detail = f" ({item.split()[-1]})" if check_type != "volumes" and not compact_format else ""
+						message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
 					message = "\n".join(sorted(message.splitlines()))
 					SendMessage(f"{header_message}{message}")
 	
@@ -363,7 +365,7 @@ def DockerChecker():
 		global old_list_uvolumes, old_list_unetworks
 		for check_type in check_types:
 			status_dot, status_message = orange_dot, "unused"
-			message, header_message = "", f"*{node_name}* (docker.{check_type})\n"
+			message, header_message = "", f"*{node_name}* (.{check_type})\n"
 			new_list = old_list = result = []
 			old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
 			new_list = getDockerData(f"u{check_type}")
@@ -376,7 +378,9 @@ def DockerChecker():
 					old_list_unetworks = new_list
 				if result:
 					for item in result:
-						message += f"{status_dot} *{item if check_type == 'volumes' else item.split()[0]}*{'' if compact_format else f' ({item.split()[-1]})'}: {status_message}!\n"
+						item_name = item.split()[0]
+						item_detail = f" ({item.split()[-1]})" if check_type != "volumes" and not compact_format else ""
+						message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
 					message = "\n".join(sorted(message.splitlines()))
 					SendMessage(f"{header_message}{message}")
 				
@@ -384,7 +388,7 @@ def DockerChecker():
 	if stacks_on:
 		global old_list_stacks
 		status_dot, status_message = orange_dot, "changed"
-		message, header_message = "", f"*{node_name}* (docker.stacks)\n"
+		message, header_message = "", f"*{node_name}* (.stacks)\n"
 		list_stacks = result = []
 		list_stacks = getDockerData("stacks")
 		if list_stacks:
@@ -404,7 +408,7 @@ def DockerChecker():
 	if containers_on:
 		global old_list_containers
 		status_dot = orange_dot
-		message, header_message = "", f"*{node_name}* (docker.containers)\n"
+		message, header_message = "", f"*{node_name}* (.containers)\n"
 		list_containers = result = []
 		stopped = False
 		container_name, container_attr, container_id, container_status = "", "", "", "inactive"
