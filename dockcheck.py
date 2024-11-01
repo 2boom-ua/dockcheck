@@ -15,8 +15,8 @@ def getDockerInfo() -> dict:
 	try:
 		docker_client = docker.from_env()
 		return {
-			"node_name": docker_client.info().get('Name', ""),
-			"docker_version": docker_client.version().get('Version', "")
+			"node_name": docker_client.info().get("Name", ""),
+			"docker_version": docker_client.version().get("Version", "")
 		}
 	except (docker.errors.DockerException, Exception) as e:
 		print(f"Error: {e}")
@@ -28,7 +28,7 @@ def getDockerResourcesCounts(stacks_on: bool, containers_on: bool, images_on: bo
 	try:
 		docker_client = docker.from_env()
 		containers = docker_client.containers.list()
-		compose_projects = {c.labels.get('com.docker.compose.project') for c in containers if c.labels.get('com.docker.compose.project')}
+		compose_projects = {c.labels.get("com.docker.compose.project") for c in containers if c.labels.get("com.docker.compose.project")}
 		if stacks_on:
 			resources["stacks"] = len(compose_projects)
 		if containers_on:
@@ -57,7 +57,7 @@ def getDockerData(data_type: str) -> tuple:
 			used_networks = []
 			networks = docker_client.networks.list()
 			for container in docker_client.containers.list(all=True):
-				[used_networks.append(network) for network in container.attrs['NetworkSettings']['Networks']]
+				[used_networks.append(network) for network in container.attrs["NetworkSettings"]["Networks"]]
 			unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
 			if unused_networks: [resource_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
 		elif data_type == "images":
@@ -76,8 +76,8 @@ def getDockerData(data_type: str) -> tuple:
 			containers = docker_client.containers.list()
 			for container in containers:
 				labels = container.labels
-				stack_name = labels.get('com.docker.compose.project')
-				stack_hash = labels.get('com.docker.compose.config-hash') 
+				stack_name = labels.get("com.docker.compose.project")
+				stack_hash = labels.get("com.docker.compose.config-hash") 
 				if stack_name:
 					resource_data.append(f"{stack_name} {stack_hash}")
 		else:
@@ -99,12 +99,22 @@ def SendMessage(message: str):
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
 			
-	def toHTMLformat(message: str) -> str:
+	def toHTMLFormat(message: str) -> str:
 		"""Format the message with bold text and HTML line breaks."""
 		formatted_message = ""
 		for i, string in enumerate(message.split('*')):
 			formatted_message += f"<b>{string}</b>" if i % 2 else string
 		formatted_message = formatted_message.replace("\n", "<br>")
+		return formatted_message
+		
+	def toMarkdownFormat(message: str, m_format: str) -> str:
+		formatted_message = ""
+		formatters = {
+			"markdown": lambda msg: msg.replace("*", "**"),
+			"html": toHTMLFormat,
+			"text": lambda msg: msg.replace("*", ""),
+			}
+		formatted_message = formatters.get(m_format, lambda msg: msg)(message)
 		return formatted_message
 
 	if telegram_on:
@@ -131,7 +141,7 @@ def SendMessage(message: str):
 	if matrix_on:
 		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
 			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
-			formatted_message = toHTMLformat(message)
+			formatted_message = toHTMLFormat(message)
 			json_data = {"msgtype": "m.text", "body": formatted_message, "format": "org.matrix.custom.html", "formatted_body": formatted_message}
 			SendRequest(url, json_data)
 	if discord_on:
@@ -142,7 +152,7 @@ def SendMessage(message: str):
 	if mattermost_on:
 		for url in mattermost_webhook_urls:
 			formatted_message = message.replace("*", "**")
-			json_data = {'text': formatted_message}
+			json_data = {"text": formatted_message}
 			SendRequest(url, json_data)
 	if pumble_on:
 		for url in pumble_webhook_urls:
@@ -153,23 +163,13 @@ def SendMessage(message: str):
 		for url, mformat in zip(apprise_webhook_urls, apprise_formats):
 			"""apprise_formats - markdown/html/text."""
 			headers_data = {"Content-Type": "application/json"}
-			formatters = {
-				"markdown": lambda msg: msg.replace("*", "**"),
-				"html": toHTMLformat,
-				"text": lambda msg: msg.replace("*", ""),
-			}
-			formatted_message = formatters.get(mformat, lambda msg: msg)(message)
+			formatted_message = toMarkdownFormat(message, mformat)
 			json_data = {"body": formatted_message, "type": "info", "format": mformat}
 			SendRequest(url, json_data, None, headers_data)
 	if custom_on:
 		for url, content_name, mformat in zip(custom_webhook_urls, custom_content_names, custom_formats):
 			"""custom_name - text/body/content/message/..., custom_format - markdown/html/text/asterisk(non standard markdown - default)."""
-			formatters = {
-				"markdown": lambda msg: msg.replace("*", "**"),
-				"html": toHTMLformat,
-				"text": lambda msg: msg.replace("*", ""),
-			}
-			formatted_message = formatters.get(mformat, lambda msg: msg)(message)
+			formatted_message = toMarkdownFormat(message, mformat)
 			json_data[content_name] = formatted_message
 			SendRequest(url, json_data)
 	if ntfy_on:
@@ -185,12 +185,12 @@ def SendMessage(message: str):
 			url = f"{server_url}/message?token={token}"
 			formatted_message = message.replace("*", "**").replace("\n", "\n\n")
 			formatted_header = header.replace("*", "")
-			json_data = {'title': formatted_header, "message": formatted_message, "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}}
+			json_data = {"title": formatted_header, "message": formatted_message, "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}}
 			SendRequest(url, json_data)
 	if pushover_on:
 		for token, user_key in zip(pushover_tokens, pushover_user_keys):
 			url = "https://api.pushover.net/1/messages.json"
-			formatted_message = toHTMLformat(message)
+			formatted_message = toHTMLFormat(message)
 			formatted_header = header.replace("*", "")
 			json_data = {"token": token, "user": user_key, "message": formatted_message, "title": formatted_header, "html": "1"}
 			SendRequest(url, json_data)
@@ -199,15 +199,15 @@ def SendMessage(message: str):
 			url = "https://api.pushbullet.com/v2/pushes"
 			formatted_header = header.replace("*", "")
 			formatted_message = message.replace("*", "")
-			json_data = {'type': 'note', 'title': formatted_header, 'body': formatted_message}
-			headers_data = {'Access-Token': token, 'Content-Type': 'application/json'}
+			json_data = {"type": "note", "title": formatted_header, "body": formatted_message}
+			headers_data = {"Access-Token": token, "Content-Type": "application/json"}
 			SendRequest(url, json_data, None, headers_data)
 
 
 if __name__ == "__main__":
 	"""Load configuration and initialize monitoring"""
 	docker_info = getDockerInfo()
-	node_name = docker_info['node_name']
+	node_name = docker_info["node_name"]
 	current_path = os.path.dirname(os.path.realpath(__file__))
 	unused_id_name = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
@@ -328,7 +328,7 @@ def DockerChecker():
 						unused_id_name.append(f"{name_image} {unused_id}")
 						parts_message[1] = replace_name
 						new_message.append(" ".join(parts_message))
-					message = " ".join(new_message).replace('! ', '!\n')
+					message = " ".join(new_message).replace("! ", "!\n")
 				SendMessage(f"{header_message}{message}")
 
 	"""Check for changes in Docker networks and volumes"""
