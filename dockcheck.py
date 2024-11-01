@@ -108,6 +108,7 @@ def SendMessage(message: str):
 		return formatted_message
 		
 	def toMarkdownFormat(message: str, m_format: str) -> str:
+		""Converts a message into a specified format (either Markdown, HTML, or plain text"""
 		formatted_message = ""
 		formatters = {
 			"markdown": lambda msg: msg.replace("*", "**"),
