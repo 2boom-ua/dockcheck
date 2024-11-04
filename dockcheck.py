@@ -108,7 +108,7 @@ def SendMessage(message: str):
 		return formatted_message
 		
 	def toMarkdownFormat(message: str, m_format: str) -> str:
-		""Converts a message into a specified format (either Markdown, HTML, or plain text"""
+		"""Converts a message into a specified format (either Markdown, HTML, or plain text"""
 		formatted_message = ""
 		formatters = {
 			"markdown": lambda msg: msg.replace("*", "**"),
@@ -161,21 +161,32 @@ def SendMessage(message: str):
 			json_data = {"text": formatted_message}
 			SendRequest(url, json_data)
 	if apprise_on:
-		for url, mformat in zip(apprise_webhook_urls, apprise_formats):
+		for url, format_message in zip(apprise_webhook_urls, apprise_format_messages):
 			"""apprise_formats - markdown/html/text."""
-			headers_data = {"Content-Type": "application/json"}
-			formatted_message = toMarkdownFormat(message, mformat)
-			json_data = {"body": formatted_message, "type": "info", "format": mformat}
-			SendRequest(url, json_data, None, headers_data)
-	if custom_on:
-		for url, content_name, mformat in zip(custom_webhook_urls, custom_content_names, custom_formats):
-			"""custom_name - text/body/content/message/..., custom_format - markdown/html/text/asterisk(non standard markdown - default)."""
-			formatted_message = toMarkdownFormat(message, mformat)
-			json_data[content_name] = formatted_message
+			formatted_message = toMarkdownFormat(message, format_message)
+			json_data = {"body": formatted_message, "type": "info", "format": format_message}
 			SendRequest(url, json_data)
+	if custom_on:
+		"""custom_name - text/body/formatted_body/content/message/..., custom_format - markdown/html/text/asterisk(non standard markdown - default)."""
+		message_str_format = ["text", "content", "message", "body", "formatted_body", "data"]
+		for url, header, pyload, format_message in zip(custom_webhook_urls, custom_headers, custom_pyloads, custom_format_messages):
+			data, ntfy = None, False
+			formated_message = toMarkdownFormat(message, format_message)
+			header_json = header if header else None
+			for key in list(pyload.keys()):
+				if key == "title":
+					header, formated_message = formated_message.split("\n", 1)
+					pyload[key] = header.replace("*", "")
+					if pyload[key] == "extras":
+						formated_message = formated_message.replace("\n", "\n\n")
+				pyload[key] = formated_message if key in message_str_format else pyload[key]
+				if key == "data": ntfy = True
+			pyload_json = None if ntfy else pyload
+			data = formated_message.encode("utf-8") if ntfy else None
+			SendRequest(url, pyload_json, data, header_json)
 	if ntfy_on:
 		for url in ntfy_webhook_urls:
-			headers_data = {"Markdown": "yes"}
+			headers_data = {"Content-Type": "application/json", "Markdown": "yes"}
 			formatted_message = message.replace("*", "**").encode(encoding = "utf-8")
 			SendRequest(url, None, formatted_message, headers_data)
 	
@@ -193,7 +204,7 @@ def SendMessage(message: str):
 			url = "https://api.pushover.net/1/messages.json"
 			formatted_message = toHTMLFormat(message)
 			formatted_header = header.replace("*", "")
-			json_data = {"token": token, "user": user_key, "message": formatted_message, "title": formatted_header, "html": "1"}
+			json_data = {"token": token, "user": user_key, "title": formatted_header, "message": formatted_message, "html": "1"}
 			SendRequest(url, json_data)
 	if pushbullet_on:
 		for token in pushbullet_tokens:
@@ -242,8 +253,8 @@ if __name__ == "__main__":
 			"ROCKET": ["WEBHOOK_URLS"],
 			"ZULIP": ["WEBHOOK_URLS"],
 			"FLOCK": ["WEBHOOK_URLS"],
-			"APPRISE": ["WEBHOOK_URLS", "FORMATS"],
-			"CUSTOM": ["WEBHOOK_URLS", "CONTENT_NAMES", "FORMATS"]
+			"APPRISE": ["WEBHOOK_URLS", "FORMAT_MESSAGES"],
+			"CUSTOM": ["WEBHOOK_URLS", "HEADERS", "PYLOADS", "FORMAT_MESSAGES"]
 		}
 		for service, keys in services.items():
 			if config_json[service]["ENABLED"]:
@@ -266,10 +277,10 @@ if __name__ == "__main__":
 		docker_counts = getDockerResourcesCounts(stacks_on, containers_on, images_on, networks_on, volumes_on)
 		monitoring_message += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items() if count != 0)
 		monitoring_message += (
-			f"- polling period: {sec_repeat} seconds,\n"
 			f"- startup message: {startup_message},\n"
 			f"- compact message: {compact_format},\n"
-			f"- default dot style: {default_dot_style}."
+			f"- default dot style: {default_dot_style},\n"
+			f"- polling period: {sec_repeat} seconds."
 		)
 		if startup_message:
 			SendMessage(f"{header_message}{monitoring_message}")
