@@ -208,8 +208,10 @@ A **config.json** file in the same directory as the script, and include your API
             "second url",
             "...."
         ],
-        "FORMATS": [
-            "markdown"
+        "FORMAT_MESSAGES": [
+            "markdown",
+            "html",
+            "...."
         ]
     },
     "CUSTOM": {
@@ -218,23 +220,22 @@ A **config.json** file in the same directory as the script, and include your API
             "first url",
             "second url",
             "...."
-        ]
-        "CONTENT_NAMES": [
-            "text",
-            "body",
-        "...."
         ],
-        "FORMATS": [
-            "asterisk",
-            "markdown"
+        "HEADERS": [
+            {"first JSON structure"},
+            {"second JSON structure"},
+            "..."
+        ],
+        "PYLOADS": [
+            {"first JSON structure"},
+            {"second JSON structure"},
+            "..."
+        ],
+        "FORMAT_MESSAGES": [
+            "markdown",
+            "html",
+            "..."
         ]
-    },
-    "MONITORING_RESOURCES": {
-        "STACKS": true,
-        "CONTAINERS": true,
-        "NETWORKS": true,
-        "VOLUMES": true,
-        "IMAGES": true
     },
     "STARTUP_MESSAGE": true,
     "COMPACT_MESSAGE": false,
@@ -305,19 +306,66 @@ A **config.json** file in the same directory as the script, and include your API
 | **APPRISE** | | |
 | ENABLED | true/false | Enable or disable Apprise notifications |
 | WEBHOOK_URLS | url | The URL of your Apprise webhook |
-| FORMATS | markdown,<br>html,<br>text,<br>asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
+| FORMAT_MESSAGE | markdown,<br>html,<br>text,<br>asterisk | Specifies the message format used by each service, such as markdown, html, or other text formatting.|
 ||||
 | **CUSTOM** | | |
 | ENABLED | true/false | Enable or disable Custom notifications |
 | WEBHOOK_URLS | url | The URL of your Custom webhook |
-| FORMATS | markdown,<br>html,<br>text,<br>asterisk | The format(s) to be used for the notification (e.g., markdown/html/text/asterisk) |
-| CONTENT_NAMES | text,<br>body,<br>content,<br>message | json = {"text/body/content/message": out_message} |
+| HEADERS | JSON structure | HTTP headers for each webhook request. This varies per service and may include fields like {"Content-Type": "application/json"}. |
+| PAYLOAD | JSON structure | The JSON payload structure for each service, which usually includes message content and format. Like as  {"body": "message", "type": "info", "format": "markdown"}|
+| FORMAT_MESSAGE | markdown,<br>html,<br>text,<br>asterisk | Specifies the message format used by each service, such as markdown, html, or other text formatting.|
 
 - **markdown** - a simple text-based format with lightweight syntax for basic styling (Pumble, Mattermost, Discord, Ntfy, Gotify),
 - **html** - a web-based format using tags for advanced text styling,
 - **text** - raw text without any styling or formatting.
 - **asterisk** - non-standard Markdown (Telegram, Zulip, Flock, Slack, RocketChat).
 
+##### Examples for Telegram, Matrix, Apprise, Ntfy, Zulip, Gotify, Pushover, Pushbullet
+```
+    "CUSTOM": {
+        "ENABLED": true,
+        "WEBHOOK_URLS": [
+            "https://api.telegram.org/bot{token}/sendMessage",
+            "{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}",
+            "{server_url}/notify/{config_id}",
+            "{server_url}/{subsribe}",
+            "{organizattion}.zulipchat.com/api/v1/external/slack_incoming?api_key={api_key}",
+            "{server_url}/message?token={token}",
+            "https://api.pushover.net/1/messages.json",
+            "https://api.pushbullet.com/v2/pushes"
+        ],
+        "HEADERS": [
+            {},
+            {"Content-Type": "application/json"},
+            {"Content-Type": "application/json"},
+            {"Content-Type": "application/json", "Priority": "1", "Markdown": "yes"},
+            {},
+            {},
+            {"Content-type": "application/json"},
+            {"Content-Type": "application/json", "Access-Token": "{token}"}
+        ],
+        "PYLOADS": [
+            {"chat_id": "{chat_id}", "text": "message", "parse_mode": "Markdown"},
+            {"msgtype": "m.text", "body": "message", "format": "org.matrix.custom.html", "formatted_body": "message"},
+            {"body": "message", "type": "info", "format": "markdown"},
+            {"data": "message"},
+            {"text": "message"},
+            {"title": "title", "message": "message", "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}},
+            {"token": "{token}", "user": "{user_key}", "title": "header", "message": "message", "html": "1"},
+            {"type": "note", "title": "header", "body": "message"}
+        ],
+        "FORMAT_MESSAGES": [
+            "asterisk",
+            "html",
+            "markdown",
+            "markdown",
+            "asterisk",
+            "markdown",
+            "markdown",
+            "text"
+        ]
+    }
+```
 
 | Item   | Required   | Description   |
 |------------|------------|------------|
