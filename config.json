@@ -150,8 +150,10 @@
             "second url",
             "...."
         ],
-        "FORMATS": [
-            "markdown"
+        "FORMAT_MESSAGES": [
+            "markdown",
+            "html",
+            "...."
         ]
     },
     "CUSTOM": {
@@ -160,15 +162,21 @@
             "first url",
             "second url",
             "...."
-        ]
-        "CONTENT_NAMES": [
-            "text",
-            "body",
-        "...."
         ],
-        "FORMATS": [
-            "asterisk",
-            "markdown"
+        "HEADERS": [
+            {"first JSON structure"},
+            {"second JSON structure"},
+            "..."
+        ],
+        "PYLOADS": [
+            {"first JSON structure"},
+            {"second JSON structure"},
+            "..."
+        ],
+        "FORMAT_MESSAGES": [
+            "markdown",
+            "html",
+            "..."
         ]
     },
     "MONITORING_RESOURCES": {
