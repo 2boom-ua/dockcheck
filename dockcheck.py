@@ -237,29 +237,19 @@ if __name__ == "__main__":
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
-		messaging_platforms = ["TELEGRAM", "DISCORD", "GOTIFY", "NTFY", "PUSHBULLET", "PUSHOVER", "SLACK", "MATRIX", "MATTERMOST", "PUMBLE", "ROCKET", "ZULIP", "FLOCK", "APPRISE", "CUSTOM"]
-		telegram_on, discord_on, gotify_on, ntfy_on, pushbullet_on, pushover_on, slack_on, matrix_on, mattermost_on, pumble_on, rocket_on, zulip_on, flock_on, apprise_on, custom_on = (config_json[key]["ENABLED"] for key in messaging_platforms)
-		services = {
-			"TELEGRAM": ["TOKENS", "CHAT_IDS"],
-			"DISCORD": ["WEBHOOK_URLS"],
-			"SLACK": ["WEBHOOK_URLS"],
-			"GOTIFY": ["TOKENS", "SERVER_URLS"],
-			"NTFY": ["WEBHOOK_URLS"],
-			"PUSHBULLET": ["TOKENS"],
-			"PUSHOVER": ["TOKENS", "USER_KEYS"],
-			"MATRIX": ["TOKENS", "SERVER_URLS", "ROOM_IDS"],
-			"MATTERMOST": ["WEBHOOK_URLS"],
-			"PUMBLE": ["WEBHOOK_URLS"],
-			"ROCKET": ["WEBHOOK_URLS"],
-			"ZULIP": ["WEBHOOK_URLS"],
-			"FLOCK": ["WEBHOOK_URLS"],
-			"APPRISE": ["WEBHOOK_URLS", "FORMAT_MESSAGES"],
-			"CUSTOM": ["WEBHOOK_URLS", "HEADERS", "PYLOADS", "FORMAT_MESSAGES"]
-		}
-		for service, keys in services.items():
-			if config_json[service]["ENABLED"]:
-				globals().update({f"{service.lower()}_{key.lower()}": config_json[service][key] for key in keys})
-				monitoring_message += f"- messaging: {service.capitalize()},\n"
+		no_messaging_keys = ["MONITORING_RESOURCES", "STARTUP_MESSAGE", "COMPACT_MESSAGE", "DEFAULT_DOT_STYLE", "SEC_REPEAT"]
+		messaging_platforms = list(set(config_json) - set(no_messaging_keys))
+		for platform in [
+			"telegram_on", "discord_on", "gotify_on", "ntfy_on", "pushbullet_on", 
+			"pushover_on", "slack_on", "matrix_on", "mattermost_on", "pumble_on", 
+			"rocket_on", "zulip_on", "flock_on", "apprise_on", "custom_on"]:
+			globals()[platform] = False
+		globals().update({f"{key.lower()}_on": config_json[key]["ENABLED"] for key in messaging_platforms})
+		for platform in messaging_platforms:
+			if config_json[platform].get("ENABLED", False):
+				for key, value in config_json[platform].items():
+					globals()[f"{platform.lower()}_{key.lower()}"] = value
+				monitoring_message += f"- messaging: {platform.lower().capitalize()},\n"
 		stacks_on, containers_on, networks_on, volumes_on, images_on = (monitoring_resources[key] for key in ["STACKS", "CONTAINERS", "NETWORKS", "VOLUMES", "IMAGES"])
 		old_list_stacks = old_list_containers = old_list_images = old_list_networks = old_list_volumes = old_list_uvolumes = old_list_unetworks = []
 		data_sources = {
