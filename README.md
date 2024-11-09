@@ -30,7 +30,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
   - Pumble
   - Flock
   - Apprise
-  - Custom webhook
+  - Custom
 
 - **Customizable polling interval** through a configuration file (`config.json`).
 - **Periodic checks** with Docker resource updates logged and reported.
