@@ -168,7 +168,7 @@ def SendMessage(message: str):
 			SendRequest(url, pyload_json, data, header_json)
 	if ntfy_on:
 		for url in ntfy_webhook_urls:
-			headers_data = {"Content-Type": "application/json", "Markdown": "yes"}
+			headers_data = {"Content-Type": "text/markdown"}
 			formatted_message = message.replace("*", "**").encode(encoding = "utf-8")
 			SendRequest(url, None, formatted_message, headers_data)
 	
