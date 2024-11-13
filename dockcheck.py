@@ -89,8 +89,7 @@ def getDockerData(data_type: str) -> tuple:
 
 
 def SendMessage(message: str):
-	"""Send notifications to various messaging services (Telegram, Discord, Gotify, Ntfy, Pushbullet, Pushover, Matrix, Zulip, Flock, Slack, RocketChat, Pumble, Mattermost, CUSTOM)."""
-	"""CUSTOM - single_asterisks - Zulip, Flock, Slack, RocketChat, Flock, double_asterisks - Pumble, Mattermost """
+	"""Send notifications to various messaging services (Telegram, Discord, Gotify, Ntfy, Pushbullet, Pushover, Matrix, Zulip, Flock, Slack, RocketChat, Pumble, Mattermost, custom)."""
 	def SendRequest(url, json_data=None, data=None, headers=None):
 		"""Send an HTTP POST request and handle exceptions."""
 		try:
@@ -108,36 +107,28 @@ def SendMessage(message: str):
 		return formatted_message
 		
 	def toMarkdownFormat(message: str, m_format: str) -> str:
-		"""Converts a message into a specified format (either Markdown, HTML, or plain text"""
-		formatted_message = ""
+		"""Converts a message into a specified format (either Markdown, HTML, or plain text)"""
 		formatters = {
 			"markdown": lambda msg: msg.replace("*", "**"),
 			"html": toHTMLFormat,
 			"text": lambda msg: msg.replace("*", ""),
 			}
-		formatted_message = formatters.get(m_format, lambda msg: msg)(message)
-		return formatted_message
+		return formatters.get(m_format, lambda msg: msg)(message)
 
 	if telegram_on:
 		for token, chat_id in zip(telegram_tokens, telegram_chat_ids):
 			url = f"https://api.telegram.org/bot{token}/sendMessage"
 			json_data = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
 			SendRequest(url, json_data)
-	if slack_on:
-		for url in slack_webhook_urls:
+	if asterisk_on:
+		"""For platforms using asterisk formatting: Slack, Rocket.chat, Zulip, Flock"""
+		for url in asterisk_webhook_urls:
 			json_data = {"text": message}
 			SendRequest(url, json_data)
-	if rocket_on:
-		for url in rocket_webhook_urls:
-			json_data = {"text": message}
-			SendRequest(url, json_data)
-	if zulip_on:
-		for url in zulip_webhook_urls:
-			json_data = {"text": message}
-			SendRequest(url, json_data)
-	if flock_on:
-		for url in flock_webhook_urls:
-			json_data = {"text": message}
+	if markdown_on:
+		"""For platforms using markdown formatting: Mattermost, Pumble"""
+		for url in markdown_webhook_urls:
+			json_data = {"text": message.replace("*", "**")}
 			SendRequest(url, json_data)
 	if matrix_on:
 		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
@@ -150,24 +141,13 @@ def SendMessage(message: str):
 			formatted_message = message.replace("*", "**")
 			json_data = {"content": formatted_message}
 			SendRequest(url, json_data)
-	if mattermost_on:
-		for url in mattermost_webhook_urls:
-			formatted_message = message.replace("*", "**")
-			json_data = {"text": formatted_message}
-			SendRequest(url, json_data)
-	if pumble_on:
-		for url in pumble_webhook_urls:
-			formatted_message = message.replace("*", "**")
-			json_data = {"text": formatted_message}
-			SendRequest(url, json_data)
 	if apprise_on:
+		"""apprise_formats - markdown/html/text."""
 		for url, format_message in zip(apprise_webhook_urls, apprise_format_messages):
-			"""apprise_formats - markdown/html/text."""
 			formatted_message = toMarkdownFormat(message, format_message)
 			json_data = {"body": formatted_message, "type": "info", "format": format_message}
 			SendRequest(url, json_data)
 	if custom_on:
-		"""custom_name - text/body/formatted_body/content/message/..., custom_format - markdown/html/text/asterisk(non standard markdown - default)."""
 		message_str_format = ["text", "content", "message", "body", "formatted_body", "data"]
 		for url, header, pyload, format_message in zip(custom_webhook_urls, custom_headers, custom_pyloads, custom_format_messages):
 			data, ntfy = None, False
@@ -177,10 +157,12 @@ def SendMessage(message: str):
 				if key == "title":
 					header, formated_message = formated_message.split("\n", 1)
 					pyload[key] = header.replace("*", "")
-					if pyload[key] == "extras":
-						formated_message = formated_message.replace("\n", "\n\n")
+				elif key == "extras":
+					formated_message = formated_message.replace("\n", "\n\n")
+					pyload["message"] = formated_message
+				elif key == "data":
+					ntfy = True
 				pyload[key] = formated_message if key in message_str_format else pyload[key]
-				if key == "data": ntfy = True
 			pyload_json = None if ntfy else pyload
 			data = formated_message.encode("utf-8") if ntfy else None
 			SendRequest(url, pyload_json, data, header_json)
@@ -229,28 +211,62 @@ if __name__ == "__main__":
 	if os.path.exists(f"{current_path}/config.json"):
 		with open(f"{current_path}/config.json", "r") as file:
 			config_json = json.loads(file.read())
-		sec_repeat = max(int(config_json.get("SEC_REPEAT", 10)), 10)
-		monitoring_resources = config_json["MONITORING_RESOURCES"]
-		startup_message = config_json["STARTUP_MESSAGE"]
-		default_dot_style = config_json["DEFAULT_DOT_STYLE"]
-		compact_format = config_json["COMPACT_MESSAGE"]
+		try:
+			startup_message = config_json.get("STARTUP_MESSAGE", True)
+			compact_format = config_json.get("COMPACT_MESSAGE", False)
+			default_dot_style = config_json.get("DEFAULT_DOT_STYLE", True)
+			sec_repeat = max(int(config_json.get("SEC_REPEAT", 10)), 10)
+			monitoring_resources = config_json.get("MONITORING_RESOURCES", {})
+			stacks_on = monitoring_resources.get("STACKS", True)
+			containers_on = monitoring_resources.get("CONTAINERS", True)
+			networks_on = monitoring_resources.get("NETWORKS", True)
+			volumes_on = monitoring_resources.get("VOLUMES", True)
+			images_on = monitoring_resources.get("IMAGES", True)
+		except (json.JSONDecodeError, ValueError, TypeError, KeyError):
+			startup_message, compact_format, default_dot_style = True, False, True
+			sec_repeat = 10
+			stacks_on = containers_on = networks_on = volumes_on = images_on = True
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		no_messaging_keys = ["MONITORING_RESOURCES", "STARTUP_MESSAGE", "COMPACT_MESSAGE", "DEFAULT_DOT_STYLE", "SEC_REPEAT"]
 		messaging_platforms = list(set(config_json) - set(no_messaging_keys))
-		for platform in [
+		default_planform = [
 			"telegram_on", "discord_on", "gotify_on", "ntfy_on", "pushbullet_on", 
 			"pushover_on", "slack_on", "matrix_on", "mattermost_on", "pumble_on", 
-			"rocket_on", "zulip_on", "flock_on", "apprise_on", "custom_on"]:
-			globals()[platform] = False
+			"rocket_on", "zulip_on", "flock_on", "apprise_on"]
+		for platform_on in default_planform:
+			globals()[platform_on] = False
+		asterisk_on = markdown_on = custom_on = False
 		globals().update({f"{key.lower()}_on": config_json[key]["ENABLED"] for key in messaging_platforms})
 		for platform in messaging_platforms:
 			if config_json[platform].get("ENABLED", False):
 				for key, value in config_json[platform].items():
-					globals()[f"{platform.lower()}_{key.lower()}"] = value
+					platform_on_key = f"{platform.lower()}_on"
+					if platform_on_key in default_planform:
+						if platform_on_key in ["rocket_on", "zulip_on", "flock_on", "slack_on"]:
+							storage_key = f"asterisk_{key.lower()}"
+							asterisk_on = True
+						elif platform_on_key in ["mattermost_on", "pumble_on"]:
+							storage_key = f"markdown_{key.lower()}"
+							markdown_on = True
+						else:
+							storage_key = f"{platform.lower()}_{key.lower()}"
+						if storage_key in globals():
+							globals()[storage_key] = (globals()[storage_key] if isinstance(globals()[storage_key], list) else [globals()[storage_key]])
+							globals()[storage_key].extend(value if isinstance(value, list) else [value])
+						else:
+							globals()[storage_key] = value if isinstance(value, list) else [value]
+					else:
+						custom_key = f"custom_{key.lower()}"
+						custom_on = True
+						if custom_key in globals():
+							globals()[custom_key] = (globals()[custom_key] if isinstance(globals()[custom_key], list) else [globals()[custom_key]])
+							globals()[custom_key].extend(value if isinstance(value, list) else [value])
+						else:
+							globals()[custom_key] = value if isinstance(value, list) else [value]
 				monitoring_message += f"- messaging: {platform.lower().capitalize()},\n"
-		stacks_on, containers_on, networks_on, volumes_on, images_on = (monitoring_resources[key] for key in ["STACKS", "CONTAINERS", "NETWORKS", "VOLUMES", "IMAGES"])
+		monitoring_message = "\n".join([*sorted(monitoring_message.splitlines()), ""])
 		old_list_stacks = old_list_containers = old_list_images = old_list_networks = old_list_volumes = old_list_uvolumes = old_list_unetworks = []
 		data_sources = {
 			"stacks": stacks_on,
