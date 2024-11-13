@@ -387,6 +387,7 @@ A **config.json** file in the same directory as the script, and include your API
 - **asterisk** - non-standard Markdown (Telegram, Zulip, Flock, Slack, RocketChat).
 
 ##### Examples for Telegram, Matrix, Apprise, Ntfy, Zulip, Gotify, Pushover, Pushbullet
+you can use any name except predefined TELEGRAM, DISCORD, GOTIFY, NTFY, PUSHBULLET, PUSHOVER, SLACK, MATRIX, MATTERMOST, PUMBLE, ROCKET, ZULIP, FLOCK, APPRISE, also use any number of CUSTOM blocks
 ```
     "CUSTOM": {
         "ENABLED": true,
