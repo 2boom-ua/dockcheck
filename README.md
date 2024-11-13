@@ -405,7 +405,7 @@ you can use any name except predefined TELEGRAM, DISCORD, GOTIFY, NTFY, PUSHBULL
             {},
             {"Content-Type": "application/json"},
             {"Content-Type": "application/json"},
-            {"Content-Type": "application/json", "Priority": "1", "Markdown": "yes"},
+            {"Content-Type": "text/markdown"},
             {},
             {},
             {"Content-type": "application/json"},
