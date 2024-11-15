@@ -89,17 +89,14 @@ def getDockerData(data_type: str) -> tuple:
 
 
 def SendMessage(message: str):
-	"""Send notifications to various messaging services (Telegram, Discord, Gotify, Ntfy, Pushbullet, Pushover, Matrix, Zulip, Flock, Slack, RocketChat, Pumble, Mattermost, custom)."""
 	def SendRequest(url, json_data=None, data=None, headers=None):
-		"""Send an HTTP POST request and handle exceptions."""
 		try:
 			response = requests.post(url, json=json_data, data=data, headers=headers)
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
-			
+
 	def toHTMLFormat(message: str) -> str:
-		"""Format the message with bold text and HTML line breaks."""
 		formatted_message = ""
 		for i, string in enumerate(message.split('*')):
 			formatted_message += f"<b>{string}</b>" if i % 2 else string
@@ -107,96 +104,33 @@ def SendMessage(message: str):
 		return formatted_message
 		
 	def toMarkdownFormat(message: str, m_format: str) -> str:
-		"""Converts a message into a specified format (either Markdown, HTML, or plain text)"""
+		formatted_message = ""
 		formatters = {
 			"markdown": lambda msg: msg.replace("*", "**"),
 			"html": toHTMLFormat,
 			"text": lambda msg: msg.replace("*", ""),
 			}
-		return formatters.get(m_format, lambda msg: msg)(message)
+		formatted_message = formatters.get(m_format, lambda msg: msg)(message)
+		return formatted_message
 
-	if telegram_on:
-		for token, chat_id in zip(telegram_tokens, telegram_chat_ids):
-			url = f"https://api.telegram.org/bot{token}/sendMessage"
-			json_data = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
-			SendRequest(url, json_data)
-	if asterisk_on:
-		"""For platforms using asterisk formatting: Slack, Rocket.chat, Zulip, Flock"""
-		for url in asterisk_webhook_urls:
-			json_data = {"text": message}
-			SendRequest(url, json_data)
-	if markdown_on:
-		"""For platforms using markdown formatting: Mattermost, Pumble"""
-		for url in markdown_webhook_urls:
-			json_data = {"text": message.replace("*", "**")}
-			SendRequest(url, json_data)
-	if matrix_on:
-		for token, server_url, room_id in zip(matrix_tokens, matrix_server_urls, matrix_room_ids):
-			url = f"{server_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message?access_token={token}"
-			formatted_message = toHTMLFormat(message)
-			json_data = {"msgtype": "m.text", "body": formatted_message, "format": "org.matrix.custom.html", "formatted_body": formatted_message}
-			SendRequest(url, json_data)
-	if discord_on:
-		for url in discord_webhook_urls:
-			formatted_message = message.replace("*", "**")
-			json_data = {"content": formatted_message}
-			SendRequest(url, json_data)
-	if apprise_on:
-		"""apprise_formats - markdown/html/text."""
-		for url, format_message in zip(apprise_webhook_urls, apprise_format_messages):
-			formatted_message = toMarkdownFormat(message, format_message)
-			json_data = {"body": formatted_message, "type": "info", "format": format_message}
-			SendRequest(url, json_data)
-	if custom_on:
-		message_str_format = ["text", "content", "message", "body", "formatted_body", "data"]
-		for url, header, pyload, format_message in zip(custom_webhook_urls, custom_headers, custom_pyloads, custom_format_messages):
-			data, ntfy = None, False
-			formated_message = toMarkdownFormat(message, format_message)
-			header_json = header if header else None
-			for key in list(pyload.keys()):
-				if key == "title":
-					delimiter = "<br>" if format_message == "html" else "\n"
-					header, formated_message = formated_message.split(delimiter, 1)
-					pyload[key] = header.replace("*", "")
-				elif key == "extras":
-					formated_message = formated_message.replace("\n", "\n\n")
-					pyload["message"] = formated_message
-				elif key == "data":
-					ntfy = True
-				pyload[key] = formated_message if key in message_str_format else pyload[key]
-			pyload_json = None if ntfy else pyload
-			data = formated_message.encode("utf-8") if ntfy else None
-			SendRequest(url, pyload_json, data, header_json)
-	if ntfy_on:
-		for url in ntfy_webhook_urls:
-			headers_data = {"Content-Type": "text/markdown"}
-			formatted_message = message.replace("*", "**").encode(encoding = "utf-8")
-			SendRequest(url, None, formatted_message, headers_data)
-	
-	header, message = message.split("\n", 1)
-
-	if gotify_on:
-		for token, server_url in zip(gotify_tokens, gotify_server_urls):
-			url = f"{server_url}/message?token={token}"
-			formatted_message = message.replace("*", "**").replace("\n", "\n\n")
-			formatted_header = header.replace("*", "")
-			json_data = {"title": formatted_header, "message": formatted_message, "priority": 0, "extras": {"client::display": {"contentType": "text/markdown"}}}
-			SendRequest(url, json_data)
-	if pushover_on:
-		for token, user_key in zip(pushover_tokens, pushover_user_keys):
-			url = "https://api.pushover.net/1/messages.json"
-			formatted_message = toHTMLFormat(message)
-			formatted_header = header.replace("*", "")
-			json_data = {"token": token, "user": user_key, "title": formatted_header, "message": formatted_message, "html": "1"}
-			SendRequest(url, json_data)
-	if pushbullet_on:
-		for token in pushbullet_tokens:
-			url = "https://api.pushbullet.com/v2/pushes"
-			formatted_header = header.replace("*", "")
-			formatted_message = message.replace("*", "")
-			json_data = {"type": "note", "title": formatted_header, "body": formatted_message}
-			headers_data = {"Access-Token": token, "Content-Type": "application/json"}
-			SendRequest(url, json_data, None, headers_data)
+	for url, header, pyload, format_message in zip(platform_webhook_url, platform_header, platform_pyload, platform_format_message):
+		data, ntfy = None, False
+		formated_message = toMarkdownFormat(message, format_message)
+		header_json = header if header else None
+		for key in list(pyload.keys()):
+			if key == "title":
+				delimiter = "<br>" if format_message == "html" else "\n"
+				header, formated_message = formated_message.split(delimiter, 1)
+				pyload[key] = header.replace("*", "")
+			elif key == "extras":
+				formated_message = formated_message.replace("\n", "\n\n")
+				pyload["message"] = formated_message
+			elif key == "data":
+				ntfy = True
+			pyload[key] = formated_message if key in ["text", "content", "message", "body", "formatted_body", "data"] else pyload[key]
+		pyload_json = None if ntfy else pyload
+		data = formated_message.encode("utf-8") if ntfy else None
+		SendRequest(url, pyload_json, data, header_json)
 
 
 if __name__ == "__main__":
@@ -232,40 +166,16 @@ if __name__ == "__main__":
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		no_messaging_keys = ["MONITORING_RESOURCES", "STARTUP_MESSAGE", "COMPACT_MESSAGE", "DEFAULT_DOT_STYLE", "SEC_REPEAT"]
 		messaging_platforms = list(set(config_json) - set(no_messaging_keys))
-		default_planform = [
-			"telegram_on", "discord_on", "gotify_on", "ntfy_on", "pushbullet_on", 
-			"pushover_on", "slack_on", "matrix_on", "mattermost_on", "pumble_on", 
-			"rocket_on", "zulip_on", "flock_on", "apprise_on"]
-		for platform_on in default_planform:
-			globals()[platform_on] = False
-		asterisk_on = markdown_on = custom_on = False
 		globals().update({f"{key.lower()}_on": config_json[key]["ENABLED"] for key in messaging_platforms})
 		for platform in messaging_platforms:
 			if config_json[platform].get("ENABLED", False):
 				for key, value in config_json[platform].items():
-					platform_on_key = f"{platform.lower()}_on"
-					if platform_on_key in default_planform:
-						if platform_on_key in ["rocket_on", "zulip_on", "flock_on", "slack_on"]:
-							storage_key = f"asterisk_{key.lower()}"
-							asterisk_on = True
-						elif platform_on_key in ["mattermost_on", "pumble_on"]:
-							storage_key = f"markdown_{key.lower()}"
-							markdown_on = True
-						else:
-							storage_key = f"{platform.lower()}_{key.lower()}"
-						if storage_key in globals():
-							globals()[storage_key] = (globals()[storage_key] if isinstance(globals()[storage_key], list) else [globals()[storage_key]])
-							globals()[storage_key].extend(value if isinstance(value, list) else [value])
-						else:
-							globals()[storage_key] = value if isinstance(value, list) else [value]
+					platform_key = f"platform_{key.lower()}"
+					if platform_key in globals():
+						globals()[platform_key] = (globals()[platform_key] if isinstance(globals()[platform_key], list) else [globals()[platform_key]])
+						globals()[platform_key].extend(value if isinstance(value, list) else [value])
 					else:
-						custom_key = f"custom_{key.lower()}"
-						custom_on = True
-						if custom_key in globals():
-							globals()[custom_key] = (globals()[custom_key] if isinstance(globals()[custom_key], list) else [globals()[custom_key]])
-							globals()[custom_key].extend(value if isinstance(value, list) else [value])
-						else:
-							globals()[custom_key] = value if isinstance(value, list) else [value]
+						globals()[platform_key] = value if isinstance(value, list) else [value]
 				monitoring_message += f"- messaging: {platform.lower().capitalize()},\n"
 		monitoring_message = "\n".join([*sorted(monitoring_message.splitlines()), ""])
 		old_list_stacks = old_list_containers = old_list_images = old_list_networks = old_list_volumes = old_list_uvolumes = old_list_unetworks = []
