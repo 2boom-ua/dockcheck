@@ -155,7 +155,8 @@ def SendMessage(message: str):
 			header_json = header if header else None
 			for key in list(pyload.keys()):
 				if key == "title":
-					header, formated_message = formated_message.split("\n", 1)
+					delimiter = "<br>" if format_message == "html" else "\n"
+					header, formated_message = formated_message.split(delimiter, 1)
 					pyload[key] = header.replace("*", "")
 				elif key == "extras":
 					formated_message = formated_message.replace("\n", "\n\n")
