@@ -9,7 +9,7 @@
         "HEADER": [
             {"first JSON structure"},
             {"second JSON structure"},
-            ...
+            "...."
         ],
         "PYLOAD": [
             {"first JSON structure"},
@@ -19,7 +19,7 @@
         "FORMAT_MESSAGE": [
             "markdown",
             "html",
-            ...
+            "...."
         ]
     },
     "MONITORING_RESOURCES": {
