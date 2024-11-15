@@ -52,7 +52,7 @@ cd dockcheck
 pip install -r requirements.txt
 ```
 
-## Edit config.json:
+### Edit config.json:
 You can use any name and any number of records for each messaging platform configuration, and you can also mix platforms as needed. The number of message platform configurations is unlimited.
 
 [Configuration examples for Telegram, Matrix, Apprise, Pumble, Mattermost, Discord, Ntfy, Gotify, Zulip, Flock, Slack, Rocket.Chat, Pushover, Pushbullet](docs/json_message_config.md)
@@ -126,7 +126,7 @@ You can use any name and any number of records for each messaging platform confi
 | DEFAULT_DOT_STYLE | true/false | Round/Square dots. |
 | SEC_REPEAT | 10 | Set the poll period in seconds. Minimum is 10 seconds. | 
 
-## Running as a Linux Service
+### Running as a Linux Service
 You can set this script to run as a Linux service for continuous monitoring.
 
 Create a systemd service file:
@@ -160,11 +160,11 @@ systemctl enable dockcheck.service
 systemctl start dockcheck.service
 ```
 
-## License
+### License
 
 This project is licensed under the MIT License - see the [MIT License](https://opensource.org/licenses/MIT) for details.
 
-## Author
+### Author
 
 - **2boom** - [GitHub](https://github.com/2boom-ua)
 
