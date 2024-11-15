@@ -1,182 +1,25 @@
 {
-    "TELEGRAM": {
+   "CUSTOM_NAME": {
         "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ],
-        "CHAT_IDS": [
-            "first chat_id",
-            "second chat_id",
-            "...."
-        ]
-    },
-    "DISCORD": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-        ]
-    },
-    "SLACK": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-        ]
-    },
-    "GOTIFY": {
-        "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ],
-        "CHAT_URLS": [
-            "first server_url",
-            "second server_url",
-            "...."
-        ]
-    },
-    "NTFY": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-		]
-    },
-    "PUSHBULLET": {
-        "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ]
-    },
-    "PUSHOVER": {
-        "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ],
-        "USER_KEYS": [
-            "first user_key",
-            "second user_key",
-            "...."
-        ]
-    },
-    "MATRIX": {
-        "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ],
-        "SERVER_URLS": [
-            "first server_url",
-            "second server_url",
-            "...."
-        ],
-        "ROOM_IDS": [
-            "!first room_id",
-            "!second room_id",
-            "...."
-        ]
-    },
-    "MATTERMOST": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-        ]
-    },
-    "ROCKET": {
-        "ENABLED": false,
-        "TOKENS": [
-            "first tocken",
-            "second tocken",
-            "...."
-        ],
-		"USER_IDS": [
-            "first user_id",
-            "second user_id",
-            "...."
-        ],
-        "SERVER_URLS": [
-           "first server_url",
-            "second server_url",
-            "...."
-        ],
-		"CHANNEL_IDS": [
-            "#first channel",
-            "#second channel",
-            "...."
-        ]
-    },
-    "FLOCK": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-		]
-    },
-    "PUMBLE": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-		]
-    },
-    "ZULIP": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-		]
-    },
-    "APPRISE": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
+        "WEBHOOK_URL": [
             "first url",
             "second url",
             "...."
         ],
-        "FORMAT_MESSAGES": [
+        "HEADER": [
+            {first JSON structure},
+            {second JSON structure},
+            ...
+        ],
+        "PYLOAD": [
+            {first JSON structure},
+            {second JSON structure},
+            ...
+        ],
+        "FORMAT_MESSAGE": [
             "markdown",
             "html",
-            "...."
-        ]
-    },
-    "CUSTOM": {
-        "ENABLED": false,
-        "WEBHOOK_URLS": [
-            "first url",
-            "second url",
-            "...."
-        ],
-        "HEADERS": [
-            {"first JSON structure"},
-            {"second JSON structure"},
-            "..."
-        ],
-        "PYLOADS": [
-            {"first JSON structure"},
-            {"second JSON structure"},
-            "..."
-        ],
-        "FORMAT_MESSAGES": [
-            "markdown",
-            "html",
-            "..."
+            ...
         ]
     },
     "MONITORING_RESOURCES": {
