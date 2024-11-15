@@ -14,7 +14,7 @@
         "PYLOAD": [
             {"first JSON structure"},
             {"second JSON structure"},
-            ...
+            "...."
         ],
         "FORMAT_MESSAGE": [
             "markdown",
