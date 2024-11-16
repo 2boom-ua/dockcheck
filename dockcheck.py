@@ -138,7 +138,10 @@ if __name__ == "__main__":
 	docker_info = getDockerInfo()
 	node_name = docker_info["node_name"]
 	current_path = os.path.dirname(os.path.realpath(__file__))
-	unused_id_name = []
+	old_list_images = unused_image_name = []
+	old_list_stacks = old_list_containers = []
+	old_list_networks = old_list_unetworks = []
+	old_list_volumes = old_list_uvolumes = []
 	dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
 	square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
 	header_message = f"*{node_name}* (.dockcheck)\n"
@@ -178,7 +181,6 @@ if __name__ == "__main__":
 						globals()[platform_key] = value if isinstance(value, list) else [value]
 				monitoring_message += f"- messaging: {platform.lower().capitalize()},\n"
 		monitoring_message = "\n".join([*sorted(monitoring_message.splitlines()), ""])
-		old_list_stacks = old_list_containers = old_list_images = old_list_networks = old_list_volumes = old_list_uvolumes = old_list_unetworks = []
 		data_sources = {
 			"stacks": stacks_on,
 			"containers": containers_on,
@@ -200,7 +202,11 @@ if __name__ == "__main__":
 			f"- polling period: {sec_repeat} seconds."
 		)
 		if startup_message:
-			SendMessage(f"{header_message}{monitoring_message}")
+			if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
+				SendMessage(f"{header_message}{monitoring_message}")
+			else:
+				print("config.json is wrong")
+				exit(1)
 	else:
 		print("config.json not found")
 
@@ -210,7 +216,7 @@ if __name__ == "__main__":
 def DockerChecker():
 	"""Check for changes in Docker images"""
 	if images_on:
-		global old_list_images, unused_id_name
+		global old_list_images, unused_image_name
 		status_dot, status_message = yellow_dot, "pulled"
 		message, header_message = "", f"*{node_name}* (.images)\n"
 		list_images = result = []
@@ -230,13 +236,13 @@ def DockerChecker():
 					if image_id == image_name:
 						if image_id in old_images_str and status_dot != red_dot:
 							status_message, status_dot = "unused", orange_dot
-						if image_id in "".join(unused_id_name) and not compact_format:
-							for unsed_image in unused_id_name:
+						if image_id in "".join(unused_image_name) and not compact_format:
+							for unsed_image in unused_image_name:
 								if image_id in unsed_image:
 									parts_unused = unsed_image.split()
 									image_unsed_name, image_unsed_id = parts_unused[0], parts_unused[-1]
 									message += f"{status_dot} *{image_unsed_name}* ({image_unsed_id}): {status_message}!\n"
-									unused_id_name.remove(unsed_image)
+									unused_image_name.remove(unsed_image)
 						else:
 							message += f"{status_dot} *{image_name}*: {status_message}!\n"
 						if status_dot == orange_dot: status_dot = yellow_dot
@@ -254,7 +260,7 @@ def DockerChecker():
 						parts_message = tmp_message.split()
 						unused_id, name_image = parts_message[1].rstrip(':').strip('*'), parts_message[4].strip('*')
 						replace_name = f"*{name_image}* ({unused_id}):"
-						unused_id_name.append(f"{name_image} {unused_id}")
+						unused_image_name.append(f"{name_image} {unused_id}")
 						parts_message[1] = replace_name
 						new_message.append(" ".join(parts_message))
 					message = " ".join(new_message).replace("! ", "!\n")
