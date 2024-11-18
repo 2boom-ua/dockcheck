@@ -37,7 +37,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 
 ### Requirements
 
-- Python **3.1x** or higher
+- Python 3.X or higher
 - Docker installed and running
 - Dependencies: `docker`, `requests`, `schedule`
 
