@@ -23,21 +23,22 @@ def getDockerInfo() -> dict:
 		return {"node_name": "", "docker_version": ""}
 
 
-def getDockerResourcesCounts(stacks_on: bool, containers_on: bool, images_on: bool, networks_on: bool, volumes_on: bool) -> dict:
+def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, images_enabled: bool, networks_enabled: bool, volumes_enabled: bool) -> dict:
+	"""Retrieve the count of Docker resources (stacks, containers, images, networks, volumes)"""
 	resources = {"stacks": 0, "containers": 0, "networks": 0, "volumes": 0, "images": 0}
 	try:
 		docker_client = docker.from_env()
 		containers = docker_client.containers.list()
 		compose_projects = {c.labels.get("com.docker.compose.project") for c in containers if c.labels.get("com.docker.compose.project")}
-		if stacks_on:
+		if stacks_enabled:
 			resources["stacks"] = len(compose_projects)
-		if containers_on:
+		if containers_enabled:
 			resources["containers"] = len(containers)
-		if images_on:
+		if images_enabled:
 			resources["images"] = len(docker_client.images.list())
-		if networks_on:
+		if networks_enabled:
 			resources["networks"] = len(docker_client.networks.list())
-		if volumes_on:
+		if volumes_enabled:
 			resources["volumes"] = len(docker_client.volumes.list())
 	except (docker.errors.DockerException, Exception) as e:
 		print(f"Error: {e}")
@@ -45,7 +46,7 @@ def getDockerResourcesCounts(stacks_on: bool, containers_on: bool, images_on: bo
 
 
 def getDockerData(data_type: str) -> tuple:
-	"""Retrieve detailed data for Docker resources: volumes, images, networks, and containers."""
+	"""Retrieve detailed data for Docker resources: networks, unused networks, images, containers, stacks, or volumes"""
 	resource_data = []
 	default_networks = ["none", "host", "bridge"]
 	try:
@@ -89,30 +90,33 @@ def getDockerData(data_type: str) -> tuple:
 
 
 def SendMessage(message: str):
+	"""Internal function to send HTTP POST requests with error handling"""
 	def SendRequest(url, json_data=None, data=None, headers=None):
 		try:
 			response = requests.post(url, json=json_data, data=data, headers=headers)
 			response.raise_for_status()
 		except requests.exceptions.RequestException as e:
 			print(f"Error sending message: {e}")
-
+	
+	"""Converts the message to HTML format by replacing Markdown-like syntax"""
 	def toHTMLFormat(message: str) -> str:
 		formatted_message = ""
 		for i, string in enumerate(message.split('*')):
 			formatted_message += f"<b>{string}</b>" if i % 2 else string
 		formatted_message = formatted_message.replace("\n", "<br>")
 		return formatted_message
-		
-	def toMarkdownFormat(message: str, m_format: str) -> str:
-		formatted_message = ""
-		formatters = {
-			"markdown": lambda msg: msg.replace("*", "**"),
-			"html": toHTMLFormat,
-			"text": lambda msg: msg.replace("*", ""),
-			}
-		formatted_message = formatters.get(m_format, lambda msg: msg)(message)
-		return formatted_message
 
+	"""Converts the message to the specified format (HTML, Markdown, or plain text)"""
+	def toMarkdownFormat(message: str, m_format: str) -> str:
+		if m_format == "html":
+			return toHTMLFormat(message)
+		elif m_format == "markdown":
+			return message.replace("*", "**")
+		elif m_format == "text":
+			return message.replace("*", "")
+		return message
+
+	"""Iterate through multiple platform configurations"""
 	for url, header, pyload, format_message in zip(platform_webhook_url, platform_header, platform_pyload, platform_format_message):
 		data, ntfy = None, False
 		formated_message = toMarkdownFormat(message, format_message)
@@ -130,6 +134,7 @@ def SendMessage(message: str):
 			pyload[key] = formated_message if key in ["text", "content", "message", "body", "formatted_body", "data"] else pyload[key]
 		pyload_json = None if ntfy else pyload
 		data = formated_message.encode("utf-8") if ntfy else None
+		"""Send the request with the appropriate payload and headers"""
 		SendRequest(url, pyload_json, data, header_json)
 
 
@@ -155,21 +160,20 @@ if __name__ == "__main__":
 			default_dot_style = config_json.get("DEFAULT_DOT_STYLE", True)
 			sec_repeat = max(int(config_json.get("SEC_REPEAT", 10)), 10)
 			monitoring_resources = config_json.get("MONITORING_RESOURCES", {})
-			stacks_on = monitoring_resources.get("STACKS", True)
-			containers_on = monitoring_resources.get("CONTAINERS", True)
-			networks_on = monitoring_resources.get("NETWORKS", True)
-			volumes_on = monitoring_resources.get("VOLUMES", True)
-			images_on = monitoring_resources.get("IMAGES", True)
+			stacks_enabled = monitoring_resources.get("STACKS", True)
+			containers_enabled = monitoring_resources.get("CONTAINERS", True)
+			networks_enabled = monitoring_resources.get("NETWORKS", True)
+			volumes_enabled = monitoring_resources.get("VOLUMES", True)
+			images_enabled = monitoring_resources.get("IMAGES", True)
 		except (json.JSONDecodeError, ValueError, TypeError, KeyError):
 			startup_message, compact_format, default_dot_style = True, False, True
 			sec_repeat = 10
-			stacks_on = containers_on = networks_on = volumes_on = images_on = True
+			stacks_enabled = containers_enabled = networks_enabled = volumes_enabled = images_enabled = True
 		if not default_dot_style:
 			dots = square_dots
 		orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
 		no_messaging_keys = ["MONITORING_RESOURCES", "STARTUP_MESSAGE", "COMPACT_MESSAGE", "DEFAULT_DOT_STYLE", "SEC_REPEAT"]
 		messaging_platforms = list(set(config_json) - set(no_messaging_keys))
-		globals().update({f"{key.lower()}_on": config_json[key]["ENABLED"] for key in messaging_platforms})
 		for platform in messaging_platforms:
 			if config_json[platform].get("ENABLED", False):
 				for key, value in config_json[platform].items():
@@ -182,18 +186,18 @@ if __name__ == "__main__":
 				monitoring_message += f"- messaging: {platform.lower().capitalize()},\n"
 		monitoring_message = "\n".join([*sorted(monitoring_message.splitlines()), ""])
 		data_sources = {
-			"stacks": stacks_on,
-			"containers": containers_on,
-			"images": images_on,
-			"networks": networks_on,
-			"volumes": volumes_on,
-			"uvolumes": volumes_on,
-			"unetworks": networks_on
+			"stacks": stacks_enabled,
+			"containers": containers_enabled,
+			"images": images_enabled,
+			"networks": networks_enabled,
+			"volumes": volumes_enabled,
+			"uvolumes": volumes_enabled,
+			"unetworks": networks_enabled
 		}
 		for resource, condition in data_sources.items():
 			if condition:
 				globals()[f"old_list_{resource}"] = getDockerData(resource)
-		docker_counts = getDockerResourcesCounts(stacks_on, containers_on, images_on, networks_on, volumes_on)
+		docker_counts = getDockerResourcesCounts(stacks_enabled, containers_enabled, images_enabled, networks_enabled, volumes_enabled)
 		monitoring_message += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items() if count != 0)
 		monitoring_message += (
 			f"- startup message: {startup_message},\n"
@@ -206,16 +210,17 @@ if __name__ == "__main__":
 				SendMessage(f"{header_message}{monitoring_message}")
 			else:
 				print("config.json is wrong")
-				exit(1)
+				sys.exit(1)
 	else:
 		print("config.json not found")
+		sys.exit(1)
 
 
 """Periodically check for changes in Docker monitoring resources"""
 @repeat(every(sec_repeat).seconds)
 def DockerChecker():
 	"""Check for changes in Docker images"""
-	if images_on:
+	if images_enabled:
 		global old_list_images, unused_image_name
 		status_dot, status_message = yellow_dot, "pulled"
 		message, header_message = "", f"*{node_name}* (.images)\n"
@@ -267,8 +272,8 @@ def DockerChecker():
 				SendMessage(f"{header_message}{message}")
 
 	"""Check for changes in Docker networks and volumes"""
-	if networks_on or volumes_on:
-		check_types = ["networks" if networks_on else None, "volumes" if volumes_on else None]
+	if networks_enabled or volumes_enabled:
+		check_types = ["networks" if networks_enabled else None, "volumes" if volumes_enabled else None]
 		check_types = [check for check in check_types if check]
 		global old_list_networks, old_list_volumes
 		for check_type in check_types:
@@ -320,7 +325,7 @@ def DockerChecker():
 					SendMessage(f"{header_message}{message}")
 				
 	"""Check for changes in Docker stacks"""
-	if stacks_on:
+	if stacks_enabled:
 		global old_list_stacks
 		status_dot, status_message = orange_dot, "changed"
 		message, header_message = "", f"*{node_name}* (.stacks)\n"
@@ -340,7 +345,7 @@ def DockerChecker():
 				SendMessage(f"{header_message}{message}")
 
 	"""Check for changes in Docker containers"""
-	if containers_on:
+	if containers_enabled:
 		global old_list_containers
 		status_dot = orange_dot
 		message, header_message = "", f"*{node_name}* (.containers)\n"
@@ -368,8 +373,7 @@ def DockerChecker():
 							if not stopped: container_status = container_info[1]
 							if container_status == "running":
 								status_dot = green_dot
-								if container_attr != container_status:
-									container_status = f"{container_attr}"
+								container_status = container_attr if container_attr != container_status else container_status
 								if container_attr == "unhealthy":
 									status_dot = orange_dot
 							elif container_status == "created":
