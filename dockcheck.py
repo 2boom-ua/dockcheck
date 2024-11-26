@@ -205,12 +205,12 @@ if __name__ == "__main__":
 			f"- default dot style: {default_dot_style},\n"
 			f"- polling period: {sec_repeat} seconds."
 		)
-		if startup_message:
-			if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
+		if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
+			if startup_message:
 				SendMessage(f"{header_message}{monitoring_message}")
-			else:
-				print("config.json is wrong")
-				sys.exit(1)
+		else:
+			print("config.json is wrong")
+			sys.exit(1)
 	else:
 		print("config.json not found")
 		sys.exit(1)
