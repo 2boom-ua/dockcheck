@@ -332,7 +332,7 @@
     "WEBNTFY": {
         "ENABLED": true,
         "WEBHOOK_URL": [
-            "{SERVER_URL}/message"
+            "{SERVER_URL}/messages"
         ],
         "HEADER": [
             {"Content-Type": "application/json"}
