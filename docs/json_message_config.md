@@ -327,3 +327,27 @@
 | TOKEN | String | The token from your Pushbullet account |
 | FORMAT_MESSAGE | text | Specifies the message format used by each service, such as markdown, html, or other text formatting.|
 
+### Webntfy
+```
+    "WEBNTFY": {
+        "ENABLED": true,
+        "WEBHOOK_URL": [
+            "{SERVER_URL}/message"
+        ],
+        "HEADER": [
+            {"Content-Type": "application/json"}
+        ],
+        "PYLOAD": [
+            {"message": "message"}
+        ],
+        "FORMAT_MESSAGE": [
+            "markdown"
+        ]
+    },
+```
+| Item | Required | Description |
+|------------|------------|------------|
+| ENABLED | true/false | Enable or disable Webntfy notifications |
+| SERVER_URL | url | The URL of your Webntfy server |
+| FORMAT_MESSAGE | markdown | Specifies the message format used by each service, such as markdown, html, or other text formatting.|
+
