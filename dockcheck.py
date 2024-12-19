@@ -139,7 +139,7 @@ if __name__ == "__main__":
     """Load configuration and initialize monitoring"""
     docker_info = getDockerInfo()
     node_name = docker_info["node_name"]
-    current_path = os.path.dirname(os.path.realpath(__file__))
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
     old_list_images = unused_image_name = []
     old_list_stacks = old_list_containers = []
     old_list_networks = old_list_unetworks = []
@@ -148,8 +148,8 @@ if __name__ == "__main__":
     square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
     header_message = f"*{node_name}* (.dockcheck)\n"
     monitoring_message = f"- docker version: {docker_info['docker_version']},\n"
-    if os.path.exists(f"{current_path}/config.json"):
-        with open(f"{current_path}/config.json", "r") as file:
+    if os.path.exists(config_file):
+        with open(config_file, "r") as file:
             config_json = json.loads(file.read())
         try:
             startup_message = config_json.get("STARTUP_MESSAGE", True)
