@@ -68,11 +68,14 @@ def getDockerData(data_type: str) -> tuple:
                     image_name = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
                     resource_data.append(f"{image.short_id.split(':')[-1]} {image_name}")
         elif data_type == "containers":
-            for container in docker_client.containers.list(all=True):
-                container_info = docker_client.api.inspect_container(container.id)
-                health_status = container_info.get("State", {}).get("Health", {}).get("Status")
-                status = health_status if health_status else container_info["State"]["Status"]
-                resource_data.append(f"{container.name} {container.status} {status} {container.short_id}")
+            containers = docker_client.containers.list(all=True)
+            inactive_containers = [container for container in containers if container.status != "running"]
+            if len(inactive_containers) != len(containers):
+                for container in containers:
+                    container_info = docker_client.api.inspect_container(container.id)
+                    health_status = container_info.get("State", {}).get("Health", {}).get("Status")
+                    status = health_status if health_status else container_info["State"]["Status"]
+                    resource_data.append(f"{container.name} {container.status} {status} {container.short_id}")
         elif data_type == "stacks":
             containers = docker_client.containers.list()
             for container in containers:
