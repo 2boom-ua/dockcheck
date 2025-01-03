@@ -57,7 +57,8 @@ def getDockerData(data_type: str) -> tuple:
         elif data_type == "unetworks":
             used_networks = []
             networks = docker_client.networks.list()
-            for container in docker_client.containers.list(all=True):
+            containers = docker_client.containers.list(all=True)
+            for container in containers:
                 [used_networks.append(network) for network in container.attrs["NetworkSettings"]["Networks"]]
             unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
             if unused_networks: [resource_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
