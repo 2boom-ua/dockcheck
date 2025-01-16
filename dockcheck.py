@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#Copyright (c) 2024 2boom.
+#Copyright (c) 2024-25 2boom.
 
 import json
 import docker
 import os
 import time
 import requests
+import socket
 from schedule import every, repeat, run_pending
     
 
 def getDockerInfo() -> dict:
     """Get Docker node name and version."""
     try:
-        docker_client = docker.from_env()
+        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
         return {
             "node_name": docker_client.info().get("Name", ""),
             "docker_version": docker_client.version().get("Version", "")
@@ -27,7 +28,7 @@ def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, ima
     """Retrieve the count of Docker resources (stacks, containers, images, networks, volumes)"""
     resources = {"stacks": 0, "containers": 0, "networks": 0, "volumes": 0, "images": 0}
     try:
-        docker_client = docker.from_env()
+        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
         containers = docker_client.containers.list()
         compose_projects = {c.labels.get("com.docker.compose.project") for c in containers if c.labels.get("com.docker.compose.project")}
         if stacks_enabled:
@@ -50,7 +51,7 @@ def getDockerData(data_type: str) -> tuple:
     resource_data = []
     default_networks = ["none", "host", "bridge"]
     try:
-        docker_client = docker.from_env()
+        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
         if data_type == "networks":
             networks = docker_client.networks.list()
             if networks: [resource_data.append(f"{network.name} {network.short_id}") for network in networks if network.name not in default_networks]
