@@ -155,8 +155,8 @@ services:
       test:
         - CMD
         - pgrep
-        - -x
-        - python
+        - -fl
+        - dockcheck
       interval: 30s
       timeout: 10s
       retries: 3
