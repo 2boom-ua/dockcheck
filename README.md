@@ -47,11 +47,7 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 git clone https://github.com/2boom-ua/dockcheck.git
 cd dockcheck
 ```
-### Install required Python packages:
-
-```
-pip install -r requirements.txt
-```
+---
 
 ### Edit config.json:
 You can use any name and any number of records for each messaging platform configuration, and you can also mix platforms as needed. The number of message platform configurations is unlimited.
@@ -126,9 +122,50 @@ You can use any name and any number of records for each messaging platform confi
 | COMPACT_MESSAGE | true/false | On/Off compact format message. | 
 | DEFAULT_DOT_STYLE | true/false | Round/Square dots. |
 | SEC_REPEAT | 10 | Set the poll period in seconds. Minimum is 10 seconds. | 
+---
 
-### Running as a Linux Service
+## Docker
+### docker-cli
+```bash
+docker build -t dockcheck:latest .
+```
+```bash
+docker run -d \
+  --name dockcheck \
+  -v $(pwd)/config.json:/dockcheck/config.json \
+  -v /var/run/docker.sock:/var/run/docker.sock
+  --restart always \
+  dockcheck:latest
+```
+### docker-compose
+```
+version: "3.8"
+services:
+  dockcheck:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dockcheck
+    image: dockcheck:latest
+    volumes:
+      - ./config.json:/dockcheck/config.json
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+```
+
+```bash
+docker-compose up -d
+```
+---
+
+## Running as a Linux Service
 You can set this script to run as a Linux service for continuous monitoring.
+
+### Install required Python packages:
+
+```
+pip install -r requirements.txt
+```
 
 Create a systemd service file:
 ```
