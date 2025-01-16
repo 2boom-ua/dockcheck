@@ -151,6 +151,16 @@ services:
       - ./config.json:/dockcheck/config.json
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
+    healthcheck:
+      test:
+        - CMD
+        - pgrep
+        - -x
+        - python
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 ```
 
 ```bash
