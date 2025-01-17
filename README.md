@@ -150,6 +150,8 @@ services:
     volumes:
       - ./config.json:/dockcheck/config.json
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=UTC
     restart: always
     healthcheck:
       test: ["CMD", "pgrep", "-fl", "dockcheck"]
