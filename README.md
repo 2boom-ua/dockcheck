@@ -152,11 +152,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
     healthcheck:
-      test:
-        - CMD
-        - pgrep
-        - -fl
-        - dockcheck
+      test: ["CMD", "pgrep", "-fl", "dockcheck"]
       interval: 30s
       timeout: 10s
       retries: 3
