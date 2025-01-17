@@ -8,7 +8,15 @@ import os
 import time
 import requests
 import socket
+import logging
 from schedule import every, repeat, run_pending
+
+"""Configure logging"""
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("dockcheck")
     
 
 def getDockerInfo() -> dict:
@@ -20,7 +28,7 @@ def getDockerInfo() -> dict:
             "docker_version": docker_client.version().get("Version", "")
         }
     except (docker.errors.DockerException, Exception) as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return {"node_name": "", "docker_version": ""}
 
 
@@ -42,7 +50,7 @@ def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, ima
         if volumes_enabled:
             resources["volumes"] = len(docker_client.volumes.list())
     except (docker.errors.DockerException, Exception) as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
     return resources
 
 
@@ -90,7 +98,7 @@ def getDockerData(data_type: str) -> tuple:
             volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
             if volumes: [resource_data.append(f"{volume.short_id}") for volume in volumes]
     except (docker.errors.DockerException, Exception) as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
     return resource_data
 
 
@@ -100,9 +108,10 @@ def SendMessage(message: str):
         try:
             response = requests.post(url, json=json_data, data=data, headers=headers)
             response.raise_for_status()
+            logger.info(f"Message successfully sent to {url}. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error sending message: {e}")
-    
+            logger.error(f"Error sending message to {url}: {e}")
+
     """"Converts Markdown-like syntax to HTML format."""
     def toHTMLFormat(message: str) -> str:
         message = ''.join(f"<b>{part}</b>" if i % 2 else part for i, part in enumerate(message.split('*')))
@@ -116,13 +125,18 @@ def SendMessage(message: str):
             return message.replace("*", "**")
         elif m_format == "text":
             return message.replace("*", "")
-        return message
+        elif m_format == "simplified":
+            return message
+        else:
+            logger.error(f"Unknown format '{m_format}' provided. Returning original message.")
+            return message
 
     """Iterate through multiple platform configurations"""
     for url, header, pyload, format_message in zip(platform_webhook_url, platform_header, platform_pyload, platform_format_message):
         data, ntfy = None, False
         formated_message = toMarkdownFormat(message, format_message)
         header_json = header if header else None
+        
         for key in list(pyload.keys()):
             if key == "title":
                 delimiter = "<br>" if format_message == "html" else "\n"
@@ -134,10 +148,12 @@ def SendMessage(message: str):
             elif key == "data":
                 ntfy = True
             pyload[key] = formated_message if key in ["text", "content", "message", "body", "formatted_body", "data"] else pyload[key]
+        
         pyload_json = None if ntfy else pyload
         data = formated_message.encode("utf-8") if ntfy else None
         """Send the request with the appropriate payload and headers"""
         SendRequest(url, pyload_json, data, header_json)
+
 
 
 if __name__ == "__main__":
@@ -211,10 +227,10 @@ if __name__ == "__main__":
             if startup_message:
                 SendMessage(f"{header_message}{monitoring_message}")
         else:
-            print("config.json is wrong")
+            logger.error("config.json is wrong")
             sys.exit(1)
     else:
-        print("config.json not found")
+        logger.error("config.json not found")
         sys.exit(1)
 
 
