@@ -10,6 +10,8 @@ import requests
 import socket
 import logging
 from schedule import every, repeat, run_pending
+from urllib.parse import urlparse
+
 
 """Configure logging"""
 logging.basicConfig(
@@ -17,7 +19,11 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("dockcheck")
-    
+
+"""Get base url"""
+def GetBaseUrl(url):
+    parsed_url = urlparse(url)
+    return f"{parsed_url.scheme}://{parsed_url.netloc}...."
 
 def getDockerInfo() -> dict:
     """Get Docker node name and version."""
@@ -108,9 +114,9 @@ def SendMessage(message: str):
         try:
             response = requests.post(url, json=json_data, data=data, headers=headers)
             response.raise_for_status()
-            logger.info(f"Message successfully sent to {url}. Status code: {response.status_code}")
+            logger.info(f"Message successfully sent to {GetBaseUrl(url)}. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error sending message to {url}: {e}")
+            logger.error(f"Error sending message to {GetBaseUrl(url)}: {e}")
 
     """"Converts Markdown-like syntax to HTML format."""
     def toHTMLFormat(message: str) -> str:
@@ -148,12 +154,10 @@ def SendMessage(message: str):
             elif key == "data":
                 ntfy = True
             pyload[key] = formated_message if key in ["text", "content", "message", "body", "formatted_body", "data"] else pyload[key]
-        
         pyload_json = None if ntfy else pyload
         data = formated_message.encode("utf-8") if ntfy else None
         """Send the request with the appropriate payload and headers"""
         SendRequest(url, pyload_json, data, header_json)
-
 
 
 if __name__ == "__main__":
@@ -168,7 +172,7 @@ if __name__ == "__main__":
     dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
     square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
     header_message = f"*{node_name}* (.dockcheck)\n"
-    monitoring_message = f"- docker version: {docker_info['docker_version']},\n"
+    monitoring_message = f"- docker engine: {docker_info['docker_version']},\n"
     if os.path.exists(config_file):
         with open(config_file, "r") as file:
             config_json = json.loads(file.read())
@@ -187,6 +191,7 @@ if __name__ == "__main__":
             startup_message, compact_format, default_dot_style = True, False, True
             sec_repeat = 10
             stacks_enabled = containers_enabled = networks_enabled = volumes_enabled = images_enabled = True
+            logger.error("Error or incorrect settings in config.json. Default settings will be used.")
         if not default_dot_style:
             dots = square_dots
         orange_dot, green_dot, red_dot, yellow_dot = dots["orange"], dots["green"], dots["red"], dots["yellow"]
@@ -224,6 +229,7 @@ if __name__ == "__main__":
             f"- polling period: {sec_repeat} seconds."
         )
         if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
+            logger.info(f"Started!")
             if startup_message:
                 SendMessage(f"{header_message}{monitoring_message}")
         else:
@@ -318,7 +324,7 @@ def DockerChecker():
                         message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
                     message = "\n".join(sorted(message.splitlines()))
                     SendMessage(f"{header_message}{message}")
-    
+
         """Check for changes in Docker unused networks and volumes"""
         global old_list_uvolumes, old_list_unetworks
         for check_type in check_types:
@@ -341,7 +347,7 @@ def DockerChecker():
                         message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
                     message = "\n".join(sorted(message.splitlines()))
                     SendMessage(f"{header_message}{message}")
-                
+
     """Check for changes in Docker stacks"""
     if stacks_enabled:
         global old_list_stacks
