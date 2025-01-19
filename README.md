@@ -153,12 +153,6 @@ services:
     environment:
       - TZ=UTC
     restart: always
-    healthcheck:
-      test: ["CMD", "pgrep", "-fl", "dockcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 ```
 
 ```bash
