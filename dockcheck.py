@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger("dockcheck")
 
 """Get base url"""
-def GetBaseUrl(url):
+def getBaseUrl(url):
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}...."
 
@@ -114,9 +114,9 @@ def SendMessage(message: str):
         try:
             response = requests.post(url, json=json_data, data=data, headers=headers)
             response.raise_for_status()
-            logger.info(f"Message successfully sent to {GetBaseUrl(url)}. Status code: {response.status_code}")
+            logger.info(f"Message successfully sent to {getBaseUrl(url)}. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error sending message to {GetBaseUrl(url)}: {e}")
+            logger.error(f"Error sending message to {getBaseUrl(url)}: {e}")
 
     """"Converts Markdown-like syntax to HTML format."""
     def toHTMLFormat(message: str) -> str:
