@@ -127,26 +127,15 @@ You can use any name and any number of records for each messaging platform confi
 ## Docker
 ### docker-cli
 ```bash
-docker build -t dockcheck:latest .
-```
-```bash
-docker run -d \
-  --name dockcheck \
-  -v $(pwd)/config.json:/dockcheck/config.json \
-  -v /var/run/docker.sock:/var/run/docker.sock
-  --restart always \
-  dockcheck:latest
+docker run -v ./config.json:/dockcheck/config.json -v /var/run/docker.sock:/var/run/docker.sock --name dockcheck -e TZ=UTC ghcr.io/2boom-ua/dockcheck:latest 
 ```
 ### docker-compose
 ```
 version: "3.8"
 services:
   dockcheck:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/2boom-ua/dockcheck:latest
     container_name: dockcheck
-    image: dockcheck:latest
     volumes:
       - ./config.json:/dockcheck/config.json
       - /var/run/docker.sock:/var/run/docker.sock
