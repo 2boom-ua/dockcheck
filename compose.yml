@@ -1,11 +1,8 @@
 version: "3.8"
 services:
   dockcheck:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/2boom-ua/dockcheck:latest
     container_name: dockcheck
-    image: dockcheck:latest
     volumes:
       - ./config.json:/dockcheck/config.json
       - /var/run/docker.sock:/var/run/docker.sock
