@@ -125,6 +125,13 @@ You can use any name and any number of records for each messaging platform confi
 ---
 
 ## Docker
+```bash
+  docker build -t dockcheck .
+```
+or
+```bash
+  docker pull ghcr.io/2boom-ua/dockcheck:latest
+```
 ### docker-cli
 ```bash
 docker run -v ./config.json:/dockcheck/config.json -v /var/run/docker.sock:/var/run/docker.sock --name dockcheck -e TZ=UTC ghcr.io/2boom-ua/dockcheck:latest 
