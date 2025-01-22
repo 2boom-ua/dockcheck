@@ -41,12 +41,6 @@ This Python script monitors Docker resources (containers, images, volumes, netwo
 - Python 3.X or higher
 - Docker installed and running
 - Dependencies: `docker`, `requests`, `schedule`
-
-### Clone the repository:
-```
-git clone https://github.com/2boom-ua/dockcheck.git
-cd dockcheck
-```
 ---
 
 ### Edit config.json:
@@ -124,6 +118,12 @@ You can use any name and any number of records for each messaging platform confi
 | SEC_REPEAT | 10 | Set the poll period in seconds. Minimum is 10 seconds. | 
 ---
 
+### Clone the repository:
+```
+git clone https://github.com/2boom-ua/dockcheck.git
+cd dockcheck
+```
+---
 ## Docker
 ```bash
   docker build -t dockcheck .
