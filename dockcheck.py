@@ -222,10 +222,13 @@ if __name__ == "__main__":
                 globals()[f"old_list_{resource}"] = getDockerData(resource)
         docker_counts = getDockerResourcesCounts(stacks_enabled, containers_enabled, images_enabled, networks_enabled, volumes_enabled)
         monitoring_message += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items() if count != 0)
+        st_message = "Yes" if startup_message else "No"
+        cf_message = "Yes" if compact_format else "No"
+        dt_style = "Round" if default_dot_style else "Square"
         monitoring_message += (
-            f"- startup message: {startup_message},\n"
-            f"- compact message: {compact_format},\n"
-            f"- default dot style: {default_dot_style},\n"
+            f"- startup message: {st_message},\n"
+            f"- compact message: {cf_message},\n"
+            f"- default dot style: {dt_style},\n"
             f"- polling period: {sec_repeat} seconds."
         )
         if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
