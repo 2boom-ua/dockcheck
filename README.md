@@ -151,7 +151,7 @@ services:
       - ./config.json:/dockcheck/config.json
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - TZ=UTC
+      - TZ=Etc/UTC
     restart: always
 ```
 
