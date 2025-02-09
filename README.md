@@ -1,6 +1,6 @@
-## Docker Monitoring & Notification Script
+## Docker Monitoring & Notification
 
-This Python script monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected. It supports various messaging services.
+This Python app monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected. It supports various messaging services.
 
 <div align="center">  
     <img src="https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true" alt="" width="949" height="483">
@@ -161,7 +161,7 @@ docker-compose up -d
 ---
 
 ## Running as a Linux Service
-You can set this script to run as a Linux service for continuous monitoring.
+You can set this app to run as a Linux service for continuous monitoring.
 
 ### Install required Python packages:
 
