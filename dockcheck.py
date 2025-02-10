@@ -9,6 +9,7 @@ import time
 import requests
 import socket
 import logging
+import platform
 from schedule import every, repeat, run_pending
 from urllib.parse import urlparse
 
@@ -20,15 +21,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger("dockcheck")
 
-"""Get base url"""
-def getBaseUrl(url):
+
+def cutMessageUrl(url):
+    """Cut message url"""
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}...."
+
+
+def getPlatformBaseUrl() -> str:
+    """Returns the Docker socket path based on the OS."""
+    return 'unix://var/run/docker.sock' if platform.system() == "Linux" else 'npipe:////./pipe/docker_engine'
+
 
 def getDockerInfo() -> dict:
     """Get Docker node name and version."""
     try:
-        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        docker_client = docker.DockerClient(base_url=platform_base_url)
         return {
             "node_name": docker_client.info().get("Name", ""),
             "docker_version": docker_client.version().get("Version", "")
@@ -42,7 +50,7 @@ def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, ima
     """Retrieve the count of Docker resources (stacks, containers, images, networks, volumes)"""
     resources = {"stacks": 0, "containers": 0, "networks": 0, "volumes": 0, "images": 0}
     try:
-        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        docker_client = docker.DockerClient(base_url=platform_base_url)
         containers = docker_client.containers.list()
         compose_projects = {c.labels.get("com.docker.compose.project") for c in containers if c.labels.get("com.docker.compose.project")}
         if stacks_enabled:
@@ -65,7 +73,7 @@ def getDockerData(data_type: str) -> tuple:
     resource_data = []
     default_networks = ["none", "host", "bridge"]
     try:
-        docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        docker_client = docker.DockerClient(base_url=platform_base_url)
         if data_type == "networks":
             networks = docker_client.networks.list()
             if networks: [resource_data.append(f"{network.name} {network.short_id}") for network in networks if network.name not in default_networks]
@@ -114,9 +122,9 @@ def SendMessage(message: str):
         try:
             response = requests.post(url, json=json_data, data=data, headers=headers)
             response.raise_for_status()
-            logger.info(f"Message successfully sent to {getBaseUrl(url)}. Status code: {response.status_code}")
+            logger.info(f"Message successfully sent to {cutMessageUrl(url)}. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error sending message to {getBaseUrl(url)}: {e}")
+            logger.error(f"Error sending message to {cutMessageUrl(url)}: {e}")
 
     """"Converts Markdown-like syntax to HTML format."""
     def toHTMLFormat(message: str) -> str:
@@ -162,6 +170,7 @@ def SendMessage(message: str):
 
 if __name__ == "__main__":
     """Load configuration and initialize monitoring"""
+    platform_base_url = getPlatformBaseUrl()
     docker_info = getDockerInfo()
     node_name = docker_info["node_name"]
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
@@ -228,7 +237,7 @@ if __name__ == "__main__":
         monitoring_message += (
             f"- startup message: {st_message},\n"
             f"- compact message: {cf_message},\n"
-            f"- default dot style: {dt_style},\n"
+            f"- dot style: {dt_style},\n"
             f"- polling period: {sec_repeat} seconds."
         )
         if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_pyload", "platform_format_message"]):
