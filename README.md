@@ -1,7 +1,6 @@
 ## Docker Monitoring & Notification
 
-This Python app monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected. It supports various messaging services. Supports Docker Desktop on Windows and Docker Engine on Linux.
-
+This Python app monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected.
 <div align="center">  
     <img src="https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true" alt="" width="949" height="483">
 </div>
