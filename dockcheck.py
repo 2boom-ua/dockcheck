@@ -38,12 +38,12 @@ def getDockerInfo() -> dict:
     try:
         docker_client = docker.DockerClient(base_url=platform_base_url)
         return {
-            "node_name": docker_client.info().get("Name", ""),
+            "docker_engine_name": docker_client.info().get("Name", ""),
             "docker_version": docker_client.version().get("Version", "")
         }
     except (docker.errors.DockerException, Exception) as e:
         logger.error(f"Error: {e}")
-        return {"node_name": "", "docker_version": ""}
+        return {"docker_engine_name": "", "docker_version": ""}
 
 
 def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, images_enabled: bool, networks_enabled: bool, volumes_enabled: bool) -> dict:
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     """Load configuration and initialize monitoring"""
     platform_base_url = getPlatformBaseUrl()
     docker_info = getDockerInfo()
-    node_name = docker_info["node_name"]
+    node_name = docker_info["docker_engine_name"]
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
     old_list_images = unused_image_name = []
     old_list_stacks = old_list_containers = []
