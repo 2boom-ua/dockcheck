@@ -89,7 +89,9 @@ def getDockerData(data_type: str) -> tuple:
             images = docker_client.images.list()
             if images:
                 for image in images:
-                    image_name = image.tags[0].split(':')[0].split('/')[-1] if image.tags else image.short_id.split(':')[-1]
+                    image_name = image.tags[0].split(':')[0] if image.tags else image.short_id.split(':')[-1]
+                    parts = image_name.rsplit('/', 2)  
+                    image_name = '/'.join(parts[-2:]) if len(parts) > 1 else parts[0]
                     resource_data.append(f"{image.short_id.split(':')[-1]} {image_name}")
         elif data_type == "containers":
             containers = docker_client.containers.list(all=True)
