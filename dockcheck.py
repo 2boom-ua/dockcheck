@@ -182,7 +182,7 @@ if __name__ == "__main__":
     old_list_volumes = old_list_uvolumes = []
     dots = {"orange": "\U0001F7E0", "green": "\U0001F7E2", "red": "\U0001F534", "yellow": "\U0001F7E1"}
     square_dots = {"orange": "\U0001F7E7", "green": "\U0001F7E9", "red": "\U0001F7E5", "yellow": "\U0001F7E8"}
-    header_message = f"*{node_name}* (.dockcheck)\n"
+    header_message = f"*{node_name}* (.docker)\n"
     monitoring_message = f"- docker engine: {docker_info['docker_version']},\n"
     if os.path.exists(config_file):
         with open(config_file, "r") as file:
