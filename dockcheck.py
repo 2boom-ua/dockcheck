@@ -87,7 +87,7 @@ def getDockerData(data_type: str) -> tuple:
             unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
             if unused_networks: [resource_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
         elif data_type == "images":
-            images = docker_client.images.list()
+            images = docker_client.images.list(filters={'dangling': False})
             if images:
                 for image in images:
                     image_name = image.tags[0].split(':')[0] if image.tags else image.short_id.split(':')[-1]
