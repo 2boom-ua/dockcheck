@@ -141,7 +141,6 @@ docker run -v ./config.json:/dockcheck/config.json -v /var/run/docker.sock:/var/
 ```
 ### docker-compose
 ```
-version: "3.8"
 services:
   dockcheck:
     image: ghcr.io/2boom-ua/dockcheck:latest
