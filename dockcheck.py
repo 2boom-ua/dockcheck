@@ -427,4 +427,4 @@ def DockerChecker():
 
 while True:
     run_pending()
-    time.sleep(1)
+    time.sleep(5)
