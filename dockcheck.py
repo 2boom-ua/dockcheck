@@ -405,6 +405,9 @@ def DockerChecker():
                 for container in result:
                     container_info = "".join(container).split()
                     container_name = container_info[0]
+                    parts = container_name.split("_", 1)
+                    if len(parts) == 2 and len(parts[0]) == 12:
+                        continue
                     if container_name:
                         container_attr = container_info[2]
                         container_id = container_info[-1]
