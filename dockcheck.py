@@ -13,6 +13,7 @@ import logging
 import platform
 from schedule import every, repeat, run_pending
 from urllib.parse import urlparse
+from collections import Counter
 
 
 """Configure logging"""
@@ -23,18 +24,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def cutMessageUrl(url):
+def cut_message_url(url):
     """Cut message url"""
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}...."
 
 
-def getPlatformBaseUrl() -> str:
+def get_platform_base_url() -> str:
     """Returns the Docker socket path based on the OS."""
     return 'unix://var/run/docker.sock' if platform.system() == "Linux" else 'npipe:////./pipe/docker_engine'
 
 
-def getDockerInfo() -> dict:
+def get_docker_info() -> dict:
     """Get Docker node name and version."""
     try:
         docker_client = docker.DockerClient(base_url=platform_base_url)
@@ -47,7 +48,7 @@ def getDockerInfo() -> dict:
         return {"docker_engine_name": "", "docker_version": ""}
 
 
-def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, images_enabled: bool, networks_enabled: bool, volumes_enabled: bool) -> dict:
+def get_docker_resources_counts(stacks_enabled: bool, containers_enabled: bool, images_enabled: bool, networks_enabled: bool, volumes_enabled: bool) -> dict:
     """Retrieve the count of Docker resources (stacks, containers, images, networks, volumes)"""
     resources = {"stacks": 0, "containers": 0, "networks": 0, "volumes": 0, "images": 0}
     try:
@@ -69,7 +70,7 @@ def getDockerResourcesCounts(stacks_enabled: bool, containers_enabled: bool, ima
     return resources
 
 
-def getDockerData(data_type: str) -> tuple:
+def get_docker_data(data_type: str) -> tuple:
     """Retrieve detailed data for Docker resources: networks, unused networks, images, containers, stacks, or volumes"""
     resource_data = []
     default_networks = ["none", "host", "bridge"]
@@ -119,25 +120,25 @@ def getDockerData(data_type: str) -> tuple:
     return resource_data
 
 
-def SendMessage(message: str):
+def send_message(message: str):
     """Internal function to send HTTP POST requests with error handling"""
-    def SendRequest(url, json_data=None, data=None, headers=None):
+    def send_request(url, json_data=None, data=None, headers=None):
         try:
             response = requests.post(url, json=json_data, data=data, headers=headers, timeout=(3, 6))
             response.raise_for_status()
-            logger.info(f"Message successfully sent to {cutMessageUrl(url)}. Status code: {response.status_code}")
+            logger.info(f"Message successfully sent to {cut_message_url(url)}. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error sending message to {cutMessageUrl(url)}: {e}")
+            logger.error(f"Error sending message to {cut_message_url(url)}: {e}")
 
     """"Converts Markdown-like syntax to HTML format."""
-    def toHTMLFormat(message: str) -> str:
+    def to_HTML_format(message: str) -> str:
         message = ''.join(f"<b>{part}</b>" if i % 2 else part for i, part in enumerate(message.split('*')))
         return message.replace("\n", "<br>")
 
     """Converts the message to the specified format (HTML, Markdown, or plain text)"""
-    def toMarkdownFormat(message: str, m_format: str) -> str:
+    def to_markdown_format(message: str, m_format: str) -> str:
         if m_format == "html":
-            return toHTMLFormat(message)
+            return to_HTML_format(message)
         elif m_format == "markdown":
             return message.replace("*", "**")
         elif m_format == "text":
@@ -151,7 +152,7 @@ def SendMessage(message: str):
     """Iterate through multiple platform configurations"""
     for url, header, payload, format_message in zip(platform_webhook_url, platform_header, platform_payload, platform_format_message):
         data, ntfy = None, False
-        formated_message = toMarkdownFormat(message, format_message)
+        formated_message = to_markdown_format(message, format_message)
         header_json = header if header else None
         
         for key in list(payload.keys()):
@@ -168,13 +169,13 @@ def SendMessage(message: str):
         payload_json = None if ntfy else payload
         data = formated_message.encode("utf-8") if ntfy else None
         """Send the request with the appropriate payload and headers"""
-        SendRequest(url, payload_json, data, header_json)
+        send_request(url, payload_json, data, header_json)
 
 
 if __name__ == "__main__":
     """Load configuration and initialize monitoring"""
-    platform_base_url = getPlatformBaseUrl()
-    docker_info = getDockerInfo()
+    platform_base_url = get_platform_base_url()
+    docker_info = get_docker_info()
     node_name = docker_info["docker_engine_name"]
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
     old_list_images = unused_image_name = []
@@ -231,22 +232,19 @@ if __name__ == "__main__":
         }
         for resource, condition in data_sources.items():
             if condition:
-                globals()[f"old_list_{resource}"] = getDockerData(resource)
-        docker_counts = getDockerResourcesCounts(stacks_enabled, containers_enabled, images_enabled, networks_enabled, volumes_enabled)
+                globals()[f"old_list_{resource}"] = get_docker_data(resource)
+        docker_counts = get_docker_resources_counts(stacks_enabled, containers_enabled, images_enabled, networks_enabled, volumes_enabled)
         monitoring_message += "".join(f"- monitoring: {count} {resource},\n" for resource, count in docker_counts.items() if count != 0)
-        st_message = "Yes" if startup_message else "No"
-        cf_message = "Yes" if compact_format else "No"
-        dt_style = "Round" if default_dot_style else "Square"
         monitoring_message += (
-            f"- startup message: {st_message},\n"
-            f"- compact message: {cf_message},\n"
-            f"- dot style: {dt_style},\n"
+            f"- startup message: {'Yes' if startup_message else 'No'},\n"
+            f"- compact message: {'Yes' if compact_format else 'No'},\n"
+            f"- dot style: {'Round' if default_dot_style else 'Square'},\n"
             f"- polling period: {sec_repeat} seconds."
         )
         if all(value in globals() for value in ["platform_webhook_url", "platform_header", "platform_payload", "platform_format_message"]):
             logger.info(f"Started!")
             if startup_message:
-                SendMessage(f"{header_message}{monitoring_message}")
+                send_message(f"{header_message}{monitoring_message}")
         else:
             logger.error("config.json is wrong")
             sys.exit(1)
@@ -257,14 +255,14 @@ if __name__ == "__main__":
 
 """Periodically check for changes in Docker monitoring resources"""
 @repeat(every(sec_repeat).seconds)
-def DockerChecker():
+def docker_monitor():
     """Check for changes in Docker images"""
     if images_enabled:
         global old_list_images, unused_image_name
         status_dot, status_message = yellow_dot, "pulled"
         message, header_message = "", f"*{node_name}* (.images)\n"
         list_images = result = []
-        list_images = getDockerData("images")
+        list_images = get_docker_data("images")
         if list_images:
             if not old_list_images: old_list_images = list_images
             if len(list_images) >= len(old_list_images):
@@ -308,7 +306,7 @@ def DockerChecker():
                         parts_message[1] = replace_name
                         new_message.append(" ".join(parts_message))
                     message = " ".join(new_message).replace("! ", "!\n")
-                SendMessage(f"{header_message}{message}")
+                send_message(f"{header_message}{message}")
 
     """Check for changes in Docker networks and volumes"""
     if networks_enabled or volumes_enabled:
@@ -320,7 +318,7 @@ def DockerChecker():
             message, header_message = "", f"*{node_name}* (.{check_type})\n"
             new_list = old_list = result = []
             old_list = old_list_volumes if check_type == "volumes" else old_list_networks
-            new_list = getDockerData(check_type)
+            new_list = get_docker_data(check_type)
             if new_list:
                 if not old_list: old_list = new_list
                 if len(new_list) >= len(old_list):
@@ -338,7 +336,7 @@ def DockerChecker():
                         item_detail = f" ({item.split()[-1]})" if check_type != "volumes" and not compact_format else ""
                         message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
                     message = "\n".join(sorted(message.splitlines()))
-                    SendMessage(f"{header_message}{message}")
+                    send_message(f"{header_message}{message}")
 
         """Check for changes in Docker unused networks and volumes"""
         global old_list_uvolumes, old_list_unetworks
@@ -347,7 +345,7 @@ def DockerChecker():
             message, header_message = "", f"*{node_name}* (.{check_type})\n"
             new_list = old_list = result = []
             old_list = old_list_uvolumes if check_type == "volumes" else old_list_unetworks
-            new_list = getDockerData(f"u{check_type}")
+            new_list = get_docker_data(f"u{check_type}")
             if new_list:
                 if len(new_list) >= len(old_list):
                     result = [item for item in new_list if item not in old_list]
@@ -361,7 +359,7 @@ def DockerChecker():
                         item_detail = f" ({item.split()[-1]})" if check_type != "volumes" and not compact_format else ""
                         message += f"{status_dot} *{item_name}*{item_detail}: {status_message}!\n"
                     message = "\n".join(sorted(message.splitlines()))
-                    SendMessage(f"{header_message}{message}")
+                    send_message(f"{header_message}{message}")
 
     """Check for changes in Docker stacks"""
     if stacks_enabled:
@@ -369,7 +367,7 @@ def DockerChecker():
         status_dot, status_message = orange_dot, "changed"
         message, header_message = "", f"*{node_name}* (.stacks)\n"
         list_stacks = result = []
-        list_stacks = getDockerData("stacks")
+        list_stacks = get_docker_data("stacks")
         if list_stacks:
             if not old_list_stacks:
                 old_list_stacks = list_stacks
@@ -381,53 +379,54 @@ def DockerChecker():
                     stack_name, stack_hash = stack.split()
                     message += f"{status_dot} *{stack_name}*{'' if compact_format else f' ({stack_hash[:12]})'}: {status_message}!\n"
                 message = "\n".join(sorted(message.splitlines()))
-                SendMessage(f"{header_message}{message}")
+                send_message(f"{header_message}{message}")
 
     """Check for changes in Docker containers"""
     if containers_enabled:
         global old_list_containers
         status_dot = orange_dot
-        message, header_message = "", f"*{node_name}* (.containers)\n"
-        list_containers = result = []
+        message = ""
+        header_message = f"*{node_name}* (.containers)\n"
+        list_containers = get_docker_data("containers")
+        result = []
         stopped = False
-        container_name, container_attr, container_id, container_status = "", "", "", "inactive"
-        list_containers = getDockerData("containers")
         if list_containers:
             if not old_list_containers:
                 old_list_containers = list_containers
-            if len(list_containers) >= len(old_list_containers):
-                result = [item for item in list_containers if item not in old_list_containers]
-            else:
+            if len(list_containers) < len(old_list_containers):
                 result = [item for item in old_list_containers if item not in list_containers]
                 stopped = True
+            else:
+                result = [item for item in list_containers if item not in old_list_containers]
             if result:
                 old_list_containers = list_containers
                 for container in result:
                     container_info = "".join(container).split()
-                    container_name = container_info[0]
-                    parts = container_name.split("_", 1)
-                    if len(parts) == 2 and len(parts[0]) == 12:
+                    if len(container_info) != 4:
                         continue
-                    if container_name:
-                        container_attr = container_info[2]
-                        container_id = container_info[-1]
-                        if container_attr != "starting":
-                            if not stopped: container_status = container_info[1]
-                            if container_status == "running":
-                                status_dot = green_dot
-                                container_status = container_attr if container_attr != container_status else container_status
-                                if container_attr == "unhealthy":
-                                    status_dot = orange_dot
-                            elif container_status == "created":
-                                status_dot = yellow_dot
-                            elif container_status == "inactive":
-                                status_dot = red_dot
-                            message += f"{status_dot} *{container_name}*{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
+                    container_name, container_status, container_attr, container_id = container_info
+                    if len(container_name.split("_", 1)[0]) == 12:
+                        continue
+                    container_status = "inactive"
+                    if container_attr != "starting":
+                        if not stopped:
+                            container_status = container_info[1]
+                        if container_status == "running":
+                            status_dot = green_dot
+                            if container_attr == "unhealthy":
+                                status_dot = orange_dot
+                            container_status = container_attr if container_attr != container_status else container_status
+                        elif container_status == "created":
+                            status_dot = yellow_dot
+                        elif container_status == "inactive":
+                            status_dot = red_dot
+                        message += f"{status_dot} *{container_name}*{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
                     status_dot = orange_dot
+
                 if message:
                     message = "\n".join(sorted(message.splitlines()))
-                    SendMessage(f"{header_message}{message}")
+                    send_message(f"{header_message}{message}")
 
 while True:
     run_pending()
-    time.sleep(5)
+    time.sleep(1)
