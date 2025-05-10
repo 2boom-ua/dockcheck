@@ -24,6 +24,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def is_hex(s):
+    """Check if the string is a 12-character valid hexadecimal."""
+    try:
+        return len(s) == 12 and int(s, 16) >= 0
+    except ValueError:
+        return False
+
+
 def cut_message_url(url):
     """Cut message url"""
     parsed_url = urlparse(url)
@@ -73,51 +81,72 @@ def get_docker_resources_counts(stacks_enabled: bool, containers_enabled: bool, 
 def get_docker_data(data_type: str) -> tuple:
     """Retrieve detailed data for Docker resources: networks, unused networks, images, containers, stacks, or volumes"""
     resource_data = []
-    default_networks = ["none", "host", "bridge"]
+    default_networks = {"none", "host", "bridge"}
+    docker_client = None
+
     try:
         docker_client = docker.DockerClient(base_url=platform_base_url)
+
         if data_type == "networks":
             networks = docker_client.networks.list()
-            if networks: [resource_data.append(f"{network.name} {network.short_id}") for network in networks if network.name not in default_networks]
+            for network in networks:
+                if network.name not in default_networks:
+                    resource_data.append(f"{network.name} {network.short_id}")
+
         elif data_type == "unetworks":
-            used_networks = []
+            used_networks = set()
             networks = docker_client.networks.list()
             containers = docker_client.containers.list(all=True)
             for container in containers:
-                [used_networks.append(network) for network in container.attrs["NetworkSettings"]["Networks"]]
-            unused_networks = [network for network in networks if network.name not in used_networks and network.name not in default_networks]
-            if unused_networks: [resource_data.append(f"{network.name} {network.short_id}") for network in unused_networks]
+                container_networks = container.attrs.get("NetworkSettings", {}).get("Networks", {})
+                used_networks.update(container_networks.keys())
+
+            for network in networks:
+                if network.name not in used_networks and network.name not in default_networks:
+                    resource_data.append(f"{network.name} {network.short_id}")
+
         elif data_type == "images":
             images = docker_client.images.list(filters={'dangling': False})
-            if images:
-                for image in images:
-                    image_name = image.tags[0].split(':')[0] if image.tags else image.short_id.split(':')[-1]
-                    parts = image_name.rsplit('/', 2)  
-                    image_name = '/'.join(parts[-2:]) if len(parts) > 1 else parts[0]
-                    resource_data.append(f"{image.short_id.split(':')[-1]} {image_name}")
+            for image in images:
+                image_name = image.tags[0].split(':')[0] if image.tags else image.short_id.split(':')[-1]
+                parts = image_name.rsplit('/', 2)
+                image_name = '/'.join(parts[-2:]) if len(parts) > 1 else parts[0]
+                resource_data.append(f"{image.short_id.split(':')[-1]} {image_name}")
+
         elif data_type == "containers":
             containers = docker_client.containers.list(all=True)
-            inactive_containers = [container for container in containers if container.status != "running"]
+            inactive_containers = [c for c in containers if c.status != "running"]
             if len(inactive_containers) != len(containers):
                 for container in containers:
                     container_info = docker_client.api.inspect_container(container.id)
-                    health_status = container_info.get("State", {}).get("Health", {}).get("Status")
-                    status = health_status if health_status else container_info["State"]["Status"]
+                    state = container_info.get("State", {})
+                    health_status = state.get("Health", {}).get("Status")
+                    status = health_status if health_status else state.get("Status", "unknown")
                     resource_data.append(f"{container.name} {container.status} {status} {container.short_id}")
+
         elif data_type == "stacks":
             containers = docker_client.containers.list()
             for container in containers:
-                labels = container.labels
+                labels = container.labels or {}
                 stack_name = labels.get("com.docker.compose.project")
-                stack_hash = labels.get("com.docker.compose.config-hash") 
+                stack_hash = labels.get("com.docker.compose.config-hash")
                 if stack_name:
                     resource_data.append(f"{stack_name} {stack_hash}")
-        else:
-            volumes = docker_client.volumes.list() if data_type == "volumes" else docker_client.volumes.list(filters={"dangling": "true"})
-            if volumes: [resource_data.append(f"{volume.short_id}") for volume in volumes]
+
+        elif data_type in {"volumes", "dvolumes"}:
+            filters = {} if data_type == "volumes" else {"dangling": "true"}
+            volumes = docker_client.volumes.list(filters=filters)
+            for volume in volumes:
+                resource_data.append(f"{volume.short_id}")
+
     except (docker.errors.DockerException, Exception) as e:
-        logger.error(f"Error: {e}")
-    return resource_data
+        logger.error(f"Error retrieving Docker {data_type}: {e}")
+    finally:
+        if docker_client:
+            docker_client.close()
+
+    return tuple(resource_data)
+
 
 
 def send_message(message: str):
@@ -245,6 +274,7 @@ if __name__ == "__main__":
             logger.info(f"Started!")
             if startup_message:
                 send_message(f"{header_message}{monitoring_message}")
+            
         else:
             logger.error("config.json is wrong")
             sys.exit(1)
@@ -323,6 +353,7 @@ def docker_monitor():
                 if not old_list: old_list = new_list
                 if len(new_list) >= len(old_list):
                     result = [item for item in new_list if item not in old_list]
+                    
                 else:
                     result = [item for item in old_list if item not in new_list]
                     status_dot, status_message = red_dot, "removed"
@@ -387,30 +418,40 @@ def docker_monitor():
         status_dot = orange_dot
         message = ""
         header_message = f"*{node_name}* (.containers)\n"
+    
         list_containers = get_docker_data("containers")
         result = []
         stopped = False
+    
         if list_containers:
             if not old_list_containers:
                 old_list_containers = list_containers
-            if len(list_containers) < len(old_list_containers):
+    
+            if len(list_containers) >= len(old_list_containers):
+                result = [item for item in list_containers if item not in old_list_containers]
+            else:
                 result = [item for item in old_list_containers if item not in list_containers]
                 stopped = True
-            else:
-                result = [item for item in list_containers if item not in old_list_containers]
+    
             if result:
                 old_list_containers = list_containers
+    
                 for container in result:
                     container_info = "".join(container).split()
                     if len(container_info) != 4:
                         continue
+    
                     container_name, container_status, container_attr, container_id = container_info
-                    if len(container_name.split("_", 1)[0]) == 12:
-                        continue
-                    container_status = "inactive"
+                    
+                    if "_" in container_name:
+                        prefix, suffix = container_name.split("_", 1)
+                        if is_hex(prefix):
+                            continue
+                        
                     if container_attr != "starting":
-                        if not stopped:
-                            container_status = container_info[1]
+                        if stopped:
+                            container_status = "inactive"
+    
                         if container_status == "running":
                             status_dot = green_dot
                             if container_attr == "unhealthy":
@@ -420,12 +461,17 @@ def docker_monitor():
                             status_dot = yellow_dot
                         elif container_status == "inactive":
                             status_dot = red_dot
-                        message += f"{status_dot} *{container_name}*{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
+    
+                        message += (
+                            f"{status_dot} *{container_name}*"
+                            f"{'' if compact_format else f' ({container_id})'}: {container_status}!\n"
+                        )
+    
                     status_dot = orange_dot
-
+    
                 if message:
-                    message = "\n".join(sorted(message.splitlines()))
-                    send_message(f"{header_message}{message}")
+                    send_message(f"{header_message}{chr(10).join(sorted(message.splitlines()))}")
+
 
 while True:
     run_pending()
