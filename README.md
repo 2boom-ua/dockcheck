@@ -5,7 +5,6 @@ This Python app monitors Docker resources (containers, images, volumes, networks
     <img src="https://github.com/2boom-ua/dockchek/blob/main/screen_all.jpg?raw=true" alt="" width="949" height="483">
 </div>
 
-
 *The idea for this software was inspired by* [petersem/monocker](https://github.com/petersem/monocker)
 
 ### Features
@@ -15,28 +14,12 @@ This Python app monitors Docker resources (containers, images, volumes, networks
   - Images (pulled, removed, unused)
   - Volumes and Networks (created, removed, unused)
 - **Real-time notifications with support for multiple accounts** via:
-  - Telegram
-  - Discord
-  - Slack
-  - Gotify
-  - Ntfy
-  - Pushbullet
-  - Pushover
-  - Rocket.chat
-  - Matrix
-  - Mattermost
-  - Zulip
-  - Pumble
-  - Flock
-  - Apprise
-  - Webntfy
-  - Custom
-
+  Telegram, Discord, Slack, Gotify, Ntfy, Pushbullet, Pushover, Rocket.chat,
+  Matrix, Mattermost, Zulip, Pumble, Flock, Apprise, Webntfy, Custom
 - **Customizable polling interval** through a configuration file (`config.json`).
 - **Periodic checks** with Docker resource updates logged and reported.
 
 ### Requirements
-
 - Python 3.X or higher
 - Docker installed and running
 - Dependencies: `docker`, `requests`, `schedule`
