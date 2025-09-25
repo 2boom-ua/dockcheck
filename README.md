@@ -133,7 +133,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - TZ=Etc/UTC
-    restart: always
+    restart: unless-stopped
 ```
 
 ```bash
