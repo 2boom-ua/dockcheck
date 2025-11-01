@@ -1,4 +1,4 @@
-## Docker Monitoring & Notification
+## Docker Resource and Event Monitor
 
 This Python app monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected.
 <div align="center">  
