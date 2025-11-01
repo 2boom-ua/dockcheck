@@ -1,4 +1,4 @@
-## Docker Resource and Event Monitor
+## Alerting service for Docker container and image changes
 
 This Python app monitors Docker resources (containers, images, volumes, networks) and sends notifications when changes are detected.
 <div align="center">  
@@ -158,7 +158,7 @@ Add the following content:
 
 ```
 [Unit]
-Description=docker state change monitor
+Description=Alerting service for Docker container and image changes
 After=multi-user.target
 
 [Service]
