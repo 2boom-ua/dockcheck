@@ -1,5 +1,5 @@
 [Unit]
-Description=docker state change monitor
+Description=Docker Resource and Event Monitor
 After=multi-user.target
 
 [Service]
