@@ -13,6 +13,7 @@ import logging
 import platform
 from schedule import every, repeat, run_pending
 from urllib.parse import urlparse
+from collections import Counter
 
 
 """Configure logging"""
@@ -541,4 +542,5 @@ def docker_monitor():
 while True:
     run_pending()
     time.sleep(1)
+
 
