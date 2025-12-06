@@ -40,7 +40,10 @@ def cut_message_url(url):
 
 def get_platform_base_url() -> str:
     """Returns the Docker socket path based on the OS."""
-    return 'unix://var/run/docker.sock' if platform.system() == "Linux" else 'npipe:////./pipe/docker_engine'
+    if platform.system() == "Linux" or platform.system() == "Darwin":
+        return 'unix://var/run/docker.sock'
+    elif platform.system() == "Windows":
+        return 'npipe:////./pipe/docker_engine'
 
 
 def get_docker_info() -> dict:
@@ -542,5 +545,6 @@ def docker_monitor():
 while True:
     run_pending()
     time.sleep(1)
+
 
 
