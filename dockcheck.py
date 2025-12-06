@@ -40,11 +40,12 @@ def cut_message_url(url):
 
 def get_platform_base_url() -> str:
     """Returns the Docker socket path based on the OS."""
-    if platform.system() == "Linux" or platform.system() == "Darwin":
+    system = platform.system()
+    if system in ("Linux", "Darwin"):
         return 'unix://var/run/docker.sock'
-    elif platform.system() == "Windows":
+    elif system == "Windows":
         return 'npipe:////./pipe/docker_engine'
-
+    return None
 
 def get_docker_info() -> dict:
     """Get Docker node name and version."""
@@ -209,6 +210,9 @@ def send_message(message: str):
 if __name__ == "__main__":
     """Load configuration and initialize monitoring"""
     platform_base_url = get_platform_base_url()
+    if not platform_base_url:
+        logger.error("Unsupported operating system!")
+        sys.exit(1)
     docker_info = get_docker_info()
     node_name = docker_info["docker_engine_name"]
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
@@ -545,6 +549,3 @@ def docker_monitor():
 while True:
     run_pending()
     time.sleep(1)
-
-
-
